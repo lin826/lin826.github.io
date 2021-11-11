@@ -1,4 +1,10 @@
 # The largest heading
+
+You can use the editor on GitHub to maintain and preview the content for your website in Markdown files.
+<!-- ## Headings 2 -->
+
+> You can call out code or a command within a sentence with single backticks. The text within the backticks will not be formatted. You can also press the command or Ctrl + e keyboard shortcut to insert the backticks for a code block within a line of Markdown.
+
 ## The second largest heading
 ###### The smallest heading
 
