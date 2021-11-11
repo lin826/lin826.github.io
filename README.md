@@ -2,6 +2,16 @@
 ## The second largest heading
 ###### The smallest heading
 
+- item 1
+- item 2
+- item 3
+
+
+1. item 1
+3. item 1
+2. item 1
+1. item 1
+
 
 ## Welcome to GitHub Pages
 
