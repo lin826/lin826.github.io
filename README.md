@@ -1,5 +1,9 @@
 # The largest heading
 
+This site was built using [Link Text](https://pages.github.com/).
+
+Back to [homepage](https://lin826.github.io/).
+
 You can use the editor on GitHub to maintain and preview the content for your website in Markdown files.
 <!-- ## Headings 2 -->
 
