@@ -3,6 +3,11 @@
 ###### The smallest heading
 
 - item 1
+    - subitem 1.1
+      1. subitem 1.1.1
+      1. subitem 1.1.2
+    - subitem 1.2
+    - subitem 1.3
 - item 2
 - item 3
 
