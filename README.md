@@ -1,3 +1,5 @@
+[Link to our new page](./new-page.html).
+
 # The largest heading
 
 This site was built using [Link Text](https://pages.github.com/).
