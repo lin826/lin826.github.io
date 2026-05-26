@@ -11,7 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1jGp3k+V5VTP7XipXkv2pA+Ok+gd7ynBltKSBQk4=" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+5aHURMZr2UjUaX0t9j+1D+KODX95NRVGLA/ew+RE=" crossorigin=""/>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -128,20 +129,14 @@
                 <div class="space-y-4 pt-2 border-t border-slate-800/40">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">2. Environmental Conditions</h3>
                     
-                    <div class="grid grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-xs text-slate-500 font-semibold mb-1">Temp (°F)</label>
-                            <input id="temp" type="number" min="30" max="100" value="55" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-500 font-semibold mb-1">Humidity (%)</label>
-                            <input id="humidity" type="number" min="10" max="100" value="50" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-500 font-semibold mb-1">Wind (mph)</label>
-                            <input id="wind" type="number" min="0" max="40" value="10" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60" required>
-                        </div>
-                    </div>
+                    <div class="grid grid-cols-1 gap-3">
+    <div id="weatherInfo" class="text-sm text-slate-300">Loading weather data...</div>
+    <div id="map" class="h-64 w-full rounded-lg"></div>
+    <!-- Hidden inputs for downstream calculations -->
+    <input type="hidden" id="temp" value=""/>
+    <input type="hidden" id="humidity" value=""/>
+    <input type="hidden" id="wind" value=""/>
+</div>
                 </div>
 
                 <!-- Physiological feedback -->
@@ -454,7 +449,41 @@
 
         // First rendering
         window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            // Initialize map and fetch weather data
+            const map = L.map('map').setView([42.3601, -71.0589], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            const weatherInfoEl = document.getElementById('weatherInfo');
+
+            async function fetchWeather(lat, lon) {
+                try {
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relativehumidity_2m,windspeed_10m`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const cw = data.current_weather;
+                    const tempF = (cw.temperature * 9/5) + 32; // assume Celsius to Fahrenheit
+                    const humidity = data.hourly.relativehumidity_2m[0];
+                    const windMph = (cw.windspeed * 0.621371);
+                    document.getElementById('temp').value = Math.round(tempF);
+                    document.getElementById('humidity').value = humidity;
+                    document.getElementById('wind').value = Math.round(windMph);
+                    weatherInfoEl.innerHTML = `Temp: ${Math.round(tempF)}°F | Humidity: ${humidity}% | Wind: ${Math.round(windMph)} mph`;
+                } catch (e) {
+                    weatherInfoEl.textContent = 'Unable to load weather data';
+                }
+            }
+
+            // Initial fetch
+            fetchWeather(42.3601, -71.0589);
+
+            // Update on map move
+            map.on('moveend', () => {
+                const center = map.getCenter();
+                fetchWeather(center.lat, center.lng);
+            });
+
             updateLogsUI();
         });
     </script>
