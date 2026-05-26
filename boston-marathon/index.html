@@ -878,8 +878,38 @@
                 document.getElementById('clearForecastBtn').classList.remove('hidden');
                 calculateAdjustments();
             } catch (err) {
-                status.innerText = `Forecast fetch failed: ${err.message}. Sliders still active.`;
+                // Open-Meteo forecast only covers ~16 days ahead, and the archive
+                // is delayed by a few days. Fall back to a realistic mock so the
+                // demo flow keeps working for far-future or just-yesterday dates.
+                perSegmentForecast = mockForecastForDate(date);
+                status.innerText = `Live API unavailable (${err.message}). Using mock race-morning forecast: ` +
+                    perSegmentForecast.map(f => `${Math.round(f.temp)}°F ${f.windDir}`).join(' · ');
+                document.getElementById('clearForecastBtn').classList.remove('hidden');
+                calculateAdjustments();
             }
+        }
+
+        // Realistic Boston-in-April morning trajectory: cool at Hopkinton start,
+        // warming as the sun climbs and the runner moves east toward the coast.
+        // Seeded by the date string so the same date always returns the same mock.
+        function mockForecastForDate(dateStr) {
+            let seed = 0;
+            for (let i = 0; i < dateStr.length; i++) seed = (seed * 31 + dateStr.charCodeAt(i)) | 0;
+            const rand = () => {
+                seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                return seed / 0x7fffffff;
+            };
+            const baseTemp = 48 + rand() * 18;            // 48–66°F race-morning baseline
+            const baseWind = 5 + rand() * 12;             // 5–17 mph
+            const dir = ['head', 'tail', 'cross'][Math.floor(rand() * 3)];
+            const humidity = 45 + rand() * 35;            // 45–80%
+            // Each later segment warms ~2°F and the wind picks up modestly.
+            return [0, 1, 2, 3].map(i => ({
+                temp: Math.round(baseTemp + i * 2 + rand() * 2),
+                humidity: Math.round(Math.min(100, humidity + i * 1.5)),
+                windSpeed: Math.round(baseWind + i * 0.8),
+                windDir: dir
+            }));
         }
 
         function clearForecast() {
