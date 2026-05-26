@@ -14,6 +14,8 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script>
@@ -486,6 +488,7 @@
 
     // First rendering
     window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
       // Initialize map and fetch weather data
       const map = L.map('map').setView([42.3601, -71.0589], 10);
 
