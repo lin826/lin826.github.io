@@ -202,6 +202,34 @@
                 </div>
             </div>
 
+            <!-- Live Race-Day Forecast Panel -->
+            <div class="glass-panel rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
+                    <i data-lucide="cloud-rain" class="text-boston-lightBlue w-5 h-5"></i>
+                    <h2 class="font-bold text-lg text-slate-100">3. Race-Day Forecast</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Race Date</label>
+                        <input id="raceDate" type="date" value="2027-04-19" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 focus:outline-none focus:border-boston-gold/60">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Start (local ET)</label>
+                        <input id="raceStart" type="time" value="10:00" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 focus:outline-none focus:border-boston-gold/60">
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button onclick="fetchRaceForecast()" class="flex-1 py-2 px-3 bg-boston-blue/40 hover:bg-boston-blue/60 text-boston-gold font-bold text-xs rounded-xl border border-boston-blue/50 transition flex items-center justify-center gap-2">
+                        <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
+                        Fetch Mile-by-Mile Forecast
+                    </button>
+                    <button onclick="clearForecast()" id="clearForecastBtn" class="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-slate-400 font-semibold text-xs rounded-xl border border-slate-800 transition hidden">
+                        Use Sliders
+                    </button>
+                </div>
+                <p id="forecastStatus" class="text-[11px] text-slate-500 leading-relaxed">Sliders override the live forecast. Click <strong>Fetch</strong> to apply mile-by-mile Open-Meteo data along the route.</p>
+            </div>
+
             <!-- Boston Athletic Association Info Card -->
             <div class="bg-gradient-to-br from-boston-blue/40 to-slate-950 rounded-2xl p-6 border border-boston-blue/30 shadow-lg relative overflow-hidden">
                 <div class="absolute right-[-20px] bottom-[-20px] opacity-10">
@@ -237,6 +265,7 @@
                     <div class="my-2">
                         <span id="adjFinishTime" class="text-2xl md:text-3xl font-extrabold text-emerald-400">3:15:00</span>
                         <p class="text-[10px] text-slate-500 font-bold mt-0.5" id="finishDelta">+0:00</p>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5" id="finishBand" title="80% confidence interval from Monte-Carlo perturbation of weather inputs">P10–P90: —</p>
                     </div>
                     <i data-lucide="timer" class="text-emerald-400 w-4 h-4 mt-1"></i>
                 </div>
@@ -357,6 +386,107 @@
 
         // Core variables
         let myChart = null;
+        // When non-null, perSegmentForecast = [{temp, humidity, windSpeed, windDir}, ...] one per segment
+        let perSegmentForecast = null;
+
+        // Pure compute: given environment + target, return {totalSeconds, segments, paceMultiplier, windPenaltyAvg}
+        // env = { temp, humidity, windSpeed, windDir, strategy, perSegment }
+        // perSegment (optional) overrides temp/humidity/wind/windDir per index.
+        function computeFinish(targetSecondsTotal, env) {
+            const flatPacePerMile = targetSecondsTotal / 26.2;
+            const stratPacingModifiers = pacingModifiersFor(env.strategy);
+
+            let adjustedTargetSeconds = 0;
+            let windPenSum = 0;
+            let paceMultSum = 0;
+
+            const updatedSegments = segments.map((seg, idx) => {
+                const segMiles = [5, 10, 6, 5.2][idx];
+                const stratMod = [stratPacingModifiers.descent, stratPacingModifiers.flats, stratPacingModifiers.hills, stratPacingModifiers.sprint][idx];
+
+                // Per-segment environment (forecast overrides sliders)
+                const segEnv = env.perSegment && env.perSegment[idx] ? env.perSegment[idx] : env;
+                const { paceMultiplier, windPenalty } = weatherMultipliers(segEnv);
+
+                let gradeFactor = seg.avgGrade > 0
+                    ? 1.0 + (seg.avgGrade * 0.04)
+                    : 1.0 + (seg.avgGrade * 0.015);
+
+                const adjustedPacePerMile = (flatPacePerMile * paceMultiplier * gradeFactor * stratMod) + windPenalty;
+                adjustedTargetSeconds += adjustedPacePerMile * segMiles;
+                windPenSum += windPenalty;
+                paceMultSum += paceMultiplier;
+
+                return { ...seg, adjustedPace: adjustedPacePerMile, milesCount: segMiles, segEnv, windPenalty };
+            });
+
+            return {
+                totalSeconds: adjustedTargetSeconds,
+                segments: updatedSegments,
+                paceMultiplier: paceMultSum / segments.length,
+                windPenaltyAvg: windPenSum / segments.length
+            };
+        }
+
+        function pacingModifiersFor(strategy) {
+            if (strategy === 'conservative') return { descent: 1.025, flats: 0.995, hills: 1.01, sprint: 0.98 };
+            if (strategy === 'aggressive') return { descent: 0.97, flats: 0.99, hills: 1.05, sprint: 1.06 };
+            return { descent: 1.0, flats: 1.0, hills: 1.0, sprint: 1.0 };
+        }
+
+        function weatherMultipliers({ temp, humidity, windSpeed, windDir }) {
+            let tempFactor = 1.0;
+            if (temp > 50) tempFactor += Math.pow((temp - 50) / 10, 1.7) * 0.018;
+            else if (temp < 44) tempFactor += Math.pow((44 - temp) / 10, 1.3) * 0.008;
+
+            let humidityFactor = 1.0;
+            if (temp > 65 && humidity > 50) {
+                humidityFactor += ((humidity - 50) / 50) * ((temp - 55) / 45) * 0.04;
+            }
+
+            let windPenalty = 0;
+            if (windSpeed > 0) {
+                if (windDir === 'head') windPenalty = windSpeed * 0.55;
+                else if (windDir === 'tail') windPenalty = -windSpeed * 0.16;
+                else windPenalty = windSpeed * 0.08;
+            }
+
+            return { paceMultiplier: tempFactor * humidityFactor, windPenalty };
+        }
+
+        // Box-Muller standard normal
+        function gauss() {
+            const u = 1 - Math.random();
+            const v = Math.random();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        }
+
+        // Monte Carlo over weather uncertainty -> [P10, P90] adjusted finish seconds
+        function confidenceBand(targetSecondsTotal, baseEnv) {
+            const N = 100;
+            const samples = [];
+            for (let i = 0; i < N; i++) {
+                const perturbed = baseEnv.perSegment
+                    ? {
+                        ...baseEnv,
+                        perSegment: baseEnv.perSegment.map(seg => ({
+                            temp: seg.temp + gauss() * 2,
+                            humidity: Math.max(10, Math.min(100, seg.humidity + gauss() * 5)),
+                            windSpeed: Math.max(0, seg.windSpeed + gauss() * 3),
+                            windDir: seg.windDir
+                        }))
+                    }
+                    : {
+                        ...baseEnv,
+                        temp: baseEnv.temp + gauss() * 2,
+                        humidity: Math.max(10, Math.min(100, baseEnv.humidity + gauss() * 5)),
+                        windSpeed: Math.max(0, baseEnv.windSpeed + gauss() * 3)
+                    };
+                samples.push(computeFinish(targetSecondsTotal, perturbed).totalSeconds);
+            }
+            samples.sort((a, b) => a - b);
+            return { p10: samples[Math.floor(N * 0.1)], p90: samples[Math.floor(N * 0.9)] };
+        }
 
         // Formula multipliers (ACSM weather models adjusted for gradient & wind)
         function calculateAdjustments() {
@@ -372,39 +502,16 @@
             const windSpeed = parseFloat(document.getElementById('windSpeedSlider').value);
             const strategy = document.getElementById('strategy').value;
 
-            // 1. Temperature Impact (Degradation begins below 42F and above 52F)
-            let tempFactor = 1.0;
-            if (temp > 50) {
-                // Exponential degradation in heat
-                tempFactor += Math.pow((temp - 50) / 10, 1.7) * 0.018;
-            } else if (temp < 44) {
-                // Muscle stiffness degradation in cold
-                tempFactor += Math.pow((44 - temp) / 10, 1.3) * 0.008;
-            }
+            // Build base env. If a forecast is loaded, perSegment overrides each segment's weather.
+            const baseEnv = { temp, humidity, windSpeed, windDir, strategy, perSegment: perSegmentForecast };
 
-            // 2. Humidity Heat Index Impact (Sweat evaporation penalty)
-            let humidityFactor = 1.0;
-            if (temp > 65 && humidity > 50) {
-                humidityFactor += ((humidity - 50) / 50) * ((temp - 55) / 45) * 0.04;
-            }
-
-            // Combined pace adjustment multiplier
-            let paceMultiplier = tempFactor * humidityFactor;
-
-            // 3. Wind Vector Calculations
-            let windPacePenaltyPerMile = 0; // in seconds
-            if (windSpeed > 0) {
-                if (windDir === 'head') {
-                    // Headwind penalty: roughly 0.5s/mile per 1 mph of headwind
-                    windPacePenaltyPerMile = windSpeed * 0.55;
-                } else if (windDir === 'tail') {
-                    // Tailwind assistance: roughly 0.16s/mile per 1 mph
-                    windPacePenaltyPerMile = -windSpeed * 0.16;
-                } else {
-                    // Crosswind slight stability drag
-                    windPacePenaltyPerMile = windSpeed * 0.08;
-                }
-            }
+            // Main deterministic run + confidence band over weather uncertainty
+            const result = computeFinish(targetSecondsTotal, baseEnv);
+            const band = confidenceBand(targetSecondsTotal, baseEnv);
+            const updatedSegments = result.segments;
+            const adjustedTargetSeconds = result.totalSeconds;
+            const paceMultiplier = result.paceMultiplier;
+            const windPacePenaltyPerMile = result.windPenaltyAvg;
 
             // Hydration and Sodium requirements
             let fluidOzPerHour = 16;
@@ -443,58 +550,6 @@
                 riskIconName = "snowflake";
             }
 
-            // Apply strategy modifier profiles
-            // conservative start means slower first 5 miles, faster final
-            // aggressive means faster start, slow finish
-            let stratPacingModifiers = {
-                descent: 1.0,
-                flats: 1.0,
-                hills: 1.0,
-                sprint: 1.0
-            };
-
-            if (strategy === 'conservative') {
-                stratPacingModifiers.descent = 1.025; // 2.5% slower start to protect quads
-                stratPacingModifiers.flats = 0.995;
-                stratPacingModifiers.hills = 1.01;
-                stratPacingModifiers.sprint = 0.98;   // faster finish
-            } else if (strategy === 'aggressive') {
-                stratPacingModifiers.descent = 0.97;  // fast start
-                stratPacingModifiers.flats = 0.99;
-                stratPacingModifiers.hills = 1.05;    // heavy penalty on hills
-                stratPacingModifiers.sprint = 1.06;   // severe drop off at finish
-            }
-
-            // Calculate final segment splits
-            let adjustedTargetSeconds = 0;
-            const updatedSegments = segments.map((seg, idx) => {
-                let segMiles = 0;
-                let stratMod = 1.0;
-                if (idx === 0) { segMiles = 5; stratMod = stratPacingModifiers.descent; }
-                else if (idx === 1) { segMiles = 10; stratMod = stratPacingModifiers.flats; }
-                else if (idx === 2) { segMiles = 6; stratMod = stratPacingModifiers.hills; }
-                else { segMiles = 5.2; stratMod = stratPacingModifiers.sprint; }
-
-                // Grade factor adjustment
-                // Downhill accelerates but damages, uphill slows down
-                let gradeFactor = 1.0;
-                if (seg.avgGrade > 0) {
-                    gradeFactor = 1.0 + (seg.avgGrade * 0.04); // 4% slower per 1% uphill grade
-                } else {
-                    gradeFactor = 1.0 + (seg.avgGrade * 0.015); // 1.5% faster per 1% downhill grade
-                }
-
-                // Final pace computation
-                const adjustedPacePerMile = (flatPacePerMile * paceMultiplier * gradeFactor * stratMod) + windPacePenaltyPerMile;
-                adjustedTargetSeconds += adjustedPacePerMile * segMiles;
-
-                return {
-                    ...seg,
-                    adjustedPace: adjustedPacePerMile,
-                    milesCount: segMiles
-                };
-            });
-
             // Update UI elements
             const totalPacePct = (paceMultiplier - 1.0) * 100;
             document.getElementById('paceFactorPct').innerText = (paceMultiplier * 100).toFixed(1) + "%";
@@ -509,6 +564,10 @@
             } else {
                 document.getElementById('finishDelta').className = "text-[10px] text-emerald-400 font-bold mt-0.5";
             }
+
+            // Confidence band (Monte Carlo over weather uncertainty)
+            document.getElementById('finishBand').innerText =
+                `P10–P90: ${formatSecondsToTime(band.p10)} – ${formatSecondsToTime(band.p90)}`;
 
             document.getElementById('hydrationRate').innerText = `${fluidOzPerHour} oz/hr`;
             document.getElementById('electrolyteRate').innerText = `${sodiumMgPerHour} mg Sodium/hr`;
@@ -526,11 +585,15 @@
             updatedSegments.forEach(seg => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-900/40 transition duration-150";
+                const segWindPen = seg.windPenalty;
+                const fc = perSegmentForecast
+                    ? `<span class="block text-[10px] text-sky-400 mt-1">${Math.round(seg.segEnv.temp)}°F · ${Math.round(seg.segEnv.humidity)}% RH · ${Math.round(seg.segEnv.windSpeed)}mph ${seg.segEnv.windDir}</span>`
+                    : '';
                 tr.innerHTML = `
                     <td class="py-4 px-2 font-bold text-slate-200">${seg.name}</td>
                     <td class="py-4 px-2 text-slate-400">Mile ${seg.miles}</td>
                     <td class="py-4 px-2 font-semibold text-slate-300">${seg.elevationDesc}</td>
-                    <td class="py-4 px-2 text-slate-400">${windPacePenaltyPerMile >= 0 ? '+' : ''}${windPacePenaltyPerMile.toFixed(1)}s Wind Penalty</td>
+                    <td class="py-4 px-2 text-slate-400">${segWindPen >= 0 ? '+' : ''}${segWindPen.toFixed(1)}s Wind Penalty${fc}</td>
                     <td class="py-4 px-2 font-bold text-boston-gold text-sm">${formatSecondsToTime(seg.adjustedPace)} / mi</td>
                     <td class="py-4 px-2 text-slate-400 max-w-xs leading-relaxed text-[11px]">${seg.desc}</td>
                 `;
@@ -739,6 +802,91 @@
             document.getElementById('tempVal').innerText = `${document.getElementById('tempSlider').value}°F`;
             document.getElementById('humidityVal').innerText = `${document.getElementById('humiditySlider').value}%`;
             document.getElementById('windSpeedVal').innerText = `${document.getElementById('windSpeedSlider').value} mph`;
+        }
+
+        // One sample point per segment along the route (Hopkinton → Boston)
+        const SEGMENT_WAYPOINTS = [
+            { lat: 42.2287, lon: -71.5226 }, // Hopkinton start
+            { lat: 42.2845, lon: -71.3496 }, // Natick / Wellesley
+            { lat: 42.3266, lon: -71.2236 }, // Newton hills
+            { lat: 42.3496, lon: -71.0779 }  // Boston / Copley
+        ];
+
+        function degToCompass(deg) {
+            // Map meteorological wind direction (where wind comes FROM) onto the simulator's
+            // head/tail/cross categories. The course runs roughly west → east, so winds from
+            // the east are headwinds, from the west are tailwinds.
+            const d = ((deg % 360) + 360) % 360;
+            if (d >= 45 && d < 135) return 'head';   // easterly
+            if (d >= 225 && d < 315) return 'tail';  // westerly
+            return 'cross';
+        }
+
+        async function fetchRaceForecast() {
+            const status = document.getElementById('forecastStatus');
+            const date = document.getElementById('raceDate').value;
+            const startTime = document.getElementById('raceStart').value || '10:00';
+            if (!date) { status.innerText = 'Pick a race date first.'; return; }
+
+            status.innerText = 'Fetching Open-Meteo forecast for 4 waypoints…';
+            const today = new Date().toISOString().slice(0, 10);
+            const isHistorical = date < today;
+            const apiBase = isHistorical
+                ? 'https://archive-api.open-meteo.com/v1/archive'
+                : 'https://api.open-meteo.com/v1/forecast';
+
+            try {
+                const requests = SEGMENT_WAYPOINTS.map(wp => {
+                    const url = `${apiBase}?latitude=${wp.lat}&longitude=${wp.lon}` +
+                        `&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,winddirection_10m` +
+                        `&temperature_unit=fahrenheit&windspeed_unit=mph` +
+                        `&start_date=${date}&end_date=${date}&timezone=America%2FNew_York`;
+                    return fetch(url).then(r => {
+                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        return r.json();
+                    });
+                });
+                const results = await Promise.all(requests);
+
+                // Estimate the hour each segment is run, based on target finish & segment miles
+                const h = parseInt(document.getElementById('targetHours').value) || 3;
+                const m = parseInt(document.getElementById('targetMinutes').value) || 0;
+                const s = parseInt(document.getElementById('targetSeconds').value) || 0;
+                const flatPacePerMile = ((h * 3600) + (m * 60) + s) / 26.2;
+                const [sh, sm] = startTime.split(':').map(Number);
+                const segMiles = [5, 10, 6, 5.2];
+                let elapsedSec = 0;
+                const segmentHours = segMiles.map(miles => {
+                    const midSec = elapsedSec + (miles / 2) * flatPacePerMile;
+                    elapsedSec += miles * flatPacePerMile;
+                    const totalMin = sh * 60 + sm + Math.round(midSec / 60);
+                    return Math.min(23, Math.max(0, Math.floor(totalMin / 60)));
+                });
+
+                perSegmentForecast = results.map((data, idx) => {
+                    const hr = segmentHours[idx];
+                    const hourly = data.hourly || {};
+                    return {
+                        temp: hourly.temperature_2m?.[hr] ?? 55,
+                        humidity: hourly.relativehumidity_2m?.[hr] ?? 50,
+                        windSpeed: hourly.windspeed_10m?.[hr] ?? 0,
+                        windDir: degToCompass(hourly.winddirection_10m?.[hr] ?? 0)
+                    };
+                });
+
+                status.innerText = `Forecast loaded · ${perSegmentForecast.map((f, i) => `${segmentHours[i]}:00 ${Math.round(f.temp)}°F`).join(' · ')}`;
+                document.getElementById('clearForecastBtn').classList.remove('hidden');
+                calculateAdjustments();
+            } catch (err) {
+                status.innerText = `Forecast fetch failed: ${err.message}. Sliders still active.`;
+            }
+        }
+
+        function clearForecast() {
+            perSegmentForecast = null;
+            document.getElementById('clearForecastBtn').classList.add('hidden');
+            document.getElementById('forecastStatus').innerText = 'Sliders override the live forecast. Click Fetch to apply mile-by-mile Open-Meteo data along the route.';
+            calculateAdjustments();
         }
 
         // Initialize event listeners
