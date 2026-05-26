@@ -257,15 +257,15 @@
         <div id="insightPanel" class="hidden space-y-4">
           <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 text-xs">
             <div class="flex justify-between font-bold mb-1">
-              <span class="text-slate-400">Pace Deviation Error</span>
-              <span id="deviationVal" class="text-orange-400">+2.4%</span>
+              <span class="text-slate-400">Race Difficulty Score</span>
+              <span id="deviationVal" class="text-emerald-400">—/100</span>
             </div>
             <div class="w-full bg-slate-900 rounded-full h-2">
-              <div id="deviationBar" class="bg-orange-400 h-2 rounded-full" style="width: 24%"></div>
+              <div id="deviationBar" class="bg-emerald-400 h-2 rounded-full" style="width: 0%"></div>
             </div>
             <p class="text-[10px] text-slate-500 font-semibold mt-2 leading-relaxed">
-              Positive deviation indicates the environmental factors or initial downhill profile degraded pacing
-              performance more severely than predictions.
+              Weighted from logged temperature, humidity, wind, strategy fit, hydration, and physiological scores.
+              0 = ideal conditions and recovery, 100 = compounded stress.
             </p>
           </div>
 
@@ -397,7 +397,19 @@
       document.getElementById('noDataInsight').classList.add('hidden');
       document.getElementById('insightPanel').classList.remove('hidden');
 
-      const targetSec = parseTimeToSeconds(latest.targetTime);
+      const insight = generateCoachInsight(latest);
+      const devEl = document.getElementById('deviationVal');
+      const barEl = document.getElementById('deviationBar');
+      devEl.innerText = `${insight.difficulty}/100`;
+      devEl.className = insight.difficulty >= 65
+        ? 'text-red-400'
+        : insight.difficulty >= 40 ? 'text-orange-400' : 'text-emerald-400';
+      barEl.style.width = `${insight.difficulty}%`;
+      barEl.className = `h-2 rounded-full ${
+        insight.difficulty >= 65 ? 'bg-red-400' :
+        insight.difficulty >= 40 ? 'bg-orange-400' : 'bg-emerald-400'}`;
+      document.getElementById('coachTip').innerHTML = insight.recommendations
+        .map(r => `<span class="block mb-1">• ${r}</span>`).join('');
 
       // Fill table
       logs.slice().reverse().forEach(log => {
@@ -416,6 +428,42 @@
                 `;
         tbody.appendChild(tr);
       });
+    }
+
+    // Derive a 0-100 race-difficulty score and prioritized recommendations
+    // from a logged outcome. Score weights environmental load and matches
+    // physiological signals (cramping / fatigue) against likely root causes.
+    function generateCoachInsight(log) {
+      const recs = [];
+      let score = 0;
+
+      // --- Environmental load ---
+      if (log.temp >= 70) { score += 30; recs.push(`Heat load: ${log.temp}°F is well above Boston's optimum. Add 1–2 heat-acclimation sessions per week (sauna or overdressed easy runs) starting 4 weeks before race day.`); }
+      else if (log.temp >= 60) { score += 15; recs.push(`Mild heat at ${log.temp}°F. Pre-cool with ice slurry 30 min before start and grab water at every aid station.`); }
+      else if (log.temp <= 38) { score += 18; recs.push(`Cold start at ${log.temp}°F. Wear throwaway layers through Mile 3 and budget an extra 30 seconds on early miles for stiff calves.`); }
+
+      if (log.humidity >= 75 && log.temp >= 55) { score += 12; recs.push(`Sweat evaporation is impaired at ${log.humidity}% RH. Increase fluid intake by ~25% over the standard 16 oz/hr.`); }
+      if (log.wind >= 18) { score += 15; recs.push(`Sustained ${log.wind} mph wind. Tuck behind a pace group through the exposed Framingham flats (Miles 6–10) — drafting saves ~5–10s/mile.`); }
+      else if (log.wind >= 12) { score += 6; }
+
+      // --- Strategy fit ---
+      if (log.strategy === 'aggressive' && log.fatigue >= 7) { score += 12; recs.push(`Aggressive front-half paired with fatigue ${log.fatigue}/10 — the early Hopkinton descent burned your quads. Switch to Conservative Start next race and bank time on Mile 22+ instead.`); }
+      else if (log.strategy === 'aggressive' && log.temp >= 60) { score += 8; recs.push(`Aggressive pacing in ${log.temp}°F amplifies heat degradation. Even-pacing produces faster finishes once temps cross 60°F.`); }
+
+      // --- Hydration & sodium ---
+      if (log.hydration < 16 && log.cramping >= 6) { score += 14; recs.push(`Low fluid intake (${log.hydration} oz/hr) plus cramping ${log.cramping}/10 — classic hyponatremia setup. Target 20–24 oz/hr next race and pair with 400+ mg sodium/hr.`); }
+      else if (log.sodium < 300 && log.cramping >= 6) { score += 10; recs.push(`Cramping ${log.cramping}/10 with only ${log.sodium} mg sodium/hr. Bump sodium to 500+ mg/hr via salt caps or fortified gels.`); }
+      else if (log.hydration < 14) { score += 6; recs.push(`${log.hydration} oz/hr is below the ACSM minimum; budget for a swig at every station, not every other.`); }
+
+      // --- Physiological signals ---
+      if (log.fatigue >= 8 && log.cramping <= 4) { score += 8; recs.push(`Quad fatigue ${log.fatigue}/10 without cramping points to eccentric muscle damage from the downhills — add weekly downhill repeats (4×800m at 5K pace on a 2% decline) to your build.`); }
+      if (log.cramping >= 8) { score += 6; recs.push(`Severe cramping ${log.cramping}/10 — add a sports-medicine consult to rule out an underlying electrolyte or magnesium deficit.`); }
+
+      // Cap and provide a default if conditions were ideal.
+      score = Math.min(100, score);
+      if (recs.length === 0) recs.push(`Conditions were near-ideal and your physiological scores stayed low. Hold your current training block and target a 1–2% faster goal time next race.`);
+      // Show only the top 3 most actionable recommendations.
+      return { difficulty: score, recommendations: recs.slice(0, 3) };
     }
 
     // Helper to convert time HH:MM:SS to total seconds
