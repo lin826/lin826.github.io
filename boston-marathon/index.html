@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boston Pace & Weather Optimizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        boston: {
+                            blue: '#0A3B8C',
+                            lightBlue: '#1E62D0',
+                            gold: '#F2C12E',
+                            accent: '#F2A007',
+                            dark: '#0B0F19',
+                            card: '#161F30'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #080C14;
+            background-image: radial-gradient(circle at 50% 0%, #16243d 0%, #080c14 70%);
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(22, 31, 48, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .glow-gold:hover {
+            box-shadow: 0 0 15px rgba(242, 193, 46, 0.35);
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #F2C12E;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(242, 193, 46, 0.6);
+            transition: all 0.15s ease-in-out;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body class="text-slate-100 font-sans min-h-screen pb-16">
+
+    <!-- Header / Banner -->
+    <header class="relative overflow-hidden border-b border-slate-800 py-6 px-4 md:px-8 mb-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+            <div class="flex items-center gap-3">
+                <div class="bg-boston-gold/10 p-2.5 rounded-xl border border-boston-gold/30">
+                    <i data-lucide="activity" class="text-boston-gold w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-boston-gold via-yellow-200 to-white bg-clip-text text-transparent">
+                        Heartbreak Weather
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-400 font-medium">
+                        Boston Marathon Hill & Environmental Simulator
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Quick Presets -->
+            <div class="flex flex-wrap items-center gap-2 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800">
+                <span class="text-xs font-semibold px-2 text-slate-400">PRESETS:</span>
+                <button onclick="applyPreset('2026')" class="text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 transition text-emerald-400 border border-slate-700">
+                    2026 Tailwind
+                </button>
+                <button onclick="applyPreset('2025')" class="text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 transition text-green-300 border border-slate-700">
+                    2025 Pleasant
+                </button>
+                <button onclick="applyPreset('2024')" class="text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 transition text-orange-400 border border-slate-700">
+                    2024 Warm
+                </button>
+                <button onclick="applyPreset('2018')" class="text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 transition text-sky-400 border border-slate-700">
+                    2018 Frozen
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Panel: Controls & Simulators (Column span: 4) -->
+        <section class="lg:col-span-4 space-y-6">
+            
+            <!-- Runner Profile Profile Settings -->
+            <div class="glass-panel rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
+                    <i data-lucide="user" class="text-boston-lightBlue w-5 h-5"></i>
+                    <h2 class="font-bold text-lg text-slate-100">1. Target Runner Profile</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Target Finish Time</label>
+                        <div class="flex items-center gap-2">
+                            <input id="targetHours" type="number" min="2" max="6" value="3" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-center font-bold text-boston-gold focus:outline-none focus:border-boston-gold/60">
+                            <span class="text-slate-500 font-bold">:</span>
+                            <input id="targetMinutes" type="number" min="0" max="59" value="15" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-center font-bold text-boston-gold focus:outline-none focus:border-boston-gold/60">
+                            <span class="text-slate-500 font-bold">:</span>
+                            <input id="targetSeconds" type="number" min="0" max="59" value="00" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-center font-bold text-boston-gold focus:outline-none focus:border-boston-gold/60">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Runner Strategy</label>
+                        <select id="strategy" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
+                            <option value="even">Even Pacing (Calculated Flats)</option>
+                            <option value="conservative" selected>Conservative Start (Recommended for Boston)</option>
+                            <option value="aggressive">Aggressive Front-Half</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Conditions Panel -->
+            <div class="glass-panel rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
+                    <i data-lucide="cloud-sun" class="text-boston-lightBlue w-5 h-5"></i>
+                    <h2 class="font-bold text-lg text-slate-100">2. Environmental Factors</h2>
+                </div>
+
+                <!-- Temperature Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-slate-300">Air Temperature</span>
+                        <span id="tempVal" class="text-lg font-bold text-boston-gold">55°F</span>
+                    </div>
+                    <input id="tempSlider" type="range" min="30" max="100" value="55" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
+                    <div class="flex justify-between text-[10px] text-slate-500 font-bold px-1">
+                        <span>30°F (Freezing)</span>
+                        <span>45°F (Optimum)</span>
+                        <span>70°F (Warm)</span>
+                        <span>100°F (Scorching)</span>
+                    </div>
+                </div>
+
+                <!-- Humidity Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-slate-300">Relative Humidity</span>
+                        <span id="humidityVal" class="text-lg font-bold text-slate-300">50%</span>
+                    </div>
+                    <input id="humiditySlider" type="range" min="10" max="100" value="50" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
+                </div>
+
+                <!-- Wind Simulator -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">Wind Vector</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-500 font-semibold mb-1">Direction</label>
+                            <select id="windDir" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-300 focus:outline-none focus:border-boston-gold/60">
+                                <option value="head">Headwind (Boston Bound)</option>
+                                <option value="tail" selected>Tailwind (Newton Push)</option>
+                                <option value="cross">Crosswind</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between">
+                                <label class="text-xs text-slate-500 font-semibold mb-1">Speed</label>
+                                <span id="windSpeedVal" class="text-xs font-bold text-slate-300">10 mph</span>
+                            </div>
+                            <input id="windSpeedSlider" type="range" min="0" max="35" value="10" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boston Athletic Association Info Card -->
+            <div class="bg-gradient-to-br from-boston-blue/40 to-slate-950 rounded-2xl p-6 border border-boston-blue/30 shadow-lg relative overflow-hidden">
+                <div class="absolute right-[-20px] bottom-[-20px] opacity-10">
+                    <i data-lucide="award" class="w-36 h-36 text-boston-gold"></i>
+                </div>
+                <h3 class="text-boston-gold font-bold text-sm tracking-wide uppercase mb-1.5">Boston topography note</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Boston is a point-to-point course. The start in Hopkinton is 450 feet higher than the finish at Copley Square, but the four successive Newton hills (Miles 16–21) can destroy pacing if running too fast on early descents or during warm headwinds.
+                </p>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Dashboard Output (Column span: 8) -->
+        <section class="lg:col-span-8 space-y-6">
+            
+            <!-- Real-Time Metrics & Warnings HUD -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                
+                <!-- Performance Degradation HUD -->
+                <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between shadow-md">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Pace Factor</span>
+                    <div class="my-2">
+                        <span id="paceFactorPct" class="text-2xl md:text-3xl font-extrabold text-boston-gold">100.0%</span>
+                        <p class="text-[10px] text-slate-500 font-bold mt-0.5" id="paceFactorDesc">Optimal Pace Conditions</p>
+                    </div>
+                    <i data-lucide="trending-up" class="text-boston-gold w-4 h-4 mt-1"></i>
+                </div>
+
+                <!-- Suggested Finish Time -->
+                <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between shadow-md">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Adjusted Finish</span>
+                    <div class="my-2">
+                        <span id="adjFinishTime" class="text-2xl md:text-3xl font-extrabold text-emerald-400">3:15:00</span>
+                        <p class="text-[10px] text-slate-500 font-bold mt-0.5" id="finishDelta">+0:00</p>
+                    </div>
+                    <i data-lucide="timer" class="text-emerald-400 w-4 h-4 mt-1"></i>
+                </div>
+
+                <!-- Hydration Recommendation -->
+                <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between shadow-md">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Sweat Rate / Fluid</span>
+                    <div class="my-2">
+                        <span id="hydrationRate" class="text-2xl md:text-3xl font-extrabold text-sky-400">22 oz/hr</span>
+                        <p class="text-[10px] text-slate-500 font-bold mt-0.5" id="electrolyteRate">400 mg Sodium/hr</p>
+                    </div>
+                    <i data-lucide="droplet" class="text-sky-400 w-4 h-4 mt-1"></i>
+                </div>
+
+                <!-- Safety Threat Meter -->
+                <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between shadow-md">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Thermal Load Risk</span>
+                    <div class="my-2">
+                        <span id="riskBadge" class="text-sm font-extrabold px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">LOW</span>
+                        <p class="text-[10px] text-slate-500 font-bold mt-2" id="riskMsg">Safe temperatures.</p>
+                    </div>
+                    <i data-lucide="shield-alert" class="text-emerald-400 w-4 h-4 mt-1" id="riskIcon"></i>
+                </div>
+
+            </div>
+
+            <!-- Charts: Elevation & Pacing Profile -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="text-boston-lightBlue w-5 h-5"></i>
+                        <h2 class="font-bold text-lg text-slate-100">Course Pacing & Elevation Analysis</h2>
+                    </div>
+                    <span class="text-xs text-slate-400 bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800 font-bold">
+                        Interactive Mile Chart
+                    </span>
+                </div>
+                
+                <div class="relative h-[250px] md:h-[300px] w-full">
+                    <canvas id="profileChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Mile-by-Mile Blueprint & Virtual Coach Strategy -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="compass" class="text-boston-lightBlue w-5 h-5"></i>
+                        <h2 class="font-bold text-lg text-slate-100">Mile-by-Mile Tactical Blueprint</h2>
+                    </div>
+                    <button onclick="copyPacingToClipboard()" class="text-xs font-bold px-3.5 py-2 bg-boston-gold hover:bg-yellow-400 text-boston-dark font-bold rounded-xl transition flex items-center gap-2 glow-gold">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        Copy Split Card
+                    </button>
+                </div>
+
+                <!-- Interactive Strategy Grid / Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800/80 text-xs text-slate-500 font-bold uppercase tracking-wider">
+                                <th class="py-3 px-2">Segment</th>
+                                <th class="py-3 px-2">Distance</th>
+                                <th class="py-3 px-2">Elevation Trend</th>
+                                <th class="py-3 px-2">Weather Pace Adjustment</th>
+                                <th class="py-3 px-2 text-boston-gold">Target Pace</th>
+                                <th class="py-3 px-2">Tactical Guide</th>
+                            </tr>
+                        </thead>
+                        <tbody id="splitTableBody" class="text-xs divide-y divide-slate-900">
+                            <!-- Populated dynamically by javascript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-16 px-4 md:px-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-8">
+        <p>Built for the Boston Tech Week Sports Hack 2026. Formulas modeled on heat degradation metrics from ACSM marathon weather pacing studies.</p>
+    </footer>
+
+    <!-- Main Logic -->
+    <script>
+        // Boston Marathon course segment dataset
+        const segments = [
+            {
+                name: "The Descent (Hopkinton to Framingham)",
+                miles: "0 - 5",
+                desc: "Extremely steep downhill start. Control your speed carefully to prevent premature quadriceps muscle damage.",
+                avgGrade: -1.2, // % slope
+                elevationDesc: "Net descent (-150 ft)"
+            },
+            {
+                name: "Rolling Flats (Natick to Wellesley)",
+                miles: "6 - 15",
+                desc: "Slightly rolling, mostly flat terrain. Find your rhythm, lock in hydration, and conserve glycogen pools.",
+                avgGrade: -0.1,
+                elevationDesc: "Gentle rolling flats"
+            },
+            {
+                name: "The Newton Hills (Newton Lower Falls)",
+                miles: "16 - 21",
+                desc: "Four legendary climbs ending with Heartbreak Hill. Pace carefully; expect a significant speed drop.",
+                avgGrade: 1.8,
+                elevationDesc: "Successive climbs (+180 ft)"
+            },
+            {
+                name: "Sprint to Copley (Boston College to Finish)",
+                miles: "22 - 26.2",
+                desc: "Net downhill stretch through Kenmore Square and Commonwealth Ave. Empty the tank.",
+                avgGrade: -0.8,
+                elevationDesc: "Descent & flat finish"
+            }
+        ];
+
+        // Core variables
+        let myChart = null;
+
+        // Formula multipliers (ACSM weather models adjusted for gradient & wind)
+        function calculateAdjustments() {
+            const h = parseInt(document.getElementById('targetHours').value) || 3;
+            const m = parseInt(document.getElementById('targetMinutes').value) || 0;
+            const s = parseInt(document.getElementById('targetSeconds').value) || 0;
+            const targetSecondsTotal = (h * 3600) + (m * 60) + s;
+            const flatPacePerMile = targetSecondsTotal / 26.2; // seconds per mile
+
+            const temp = parseFloat(document.getElementById('tempSlider').value);
+            const humidity = parseFloat(document.getElementById('humiditySlider').value);
+            const windDir = document.getElementById('windDir').value;
+            const windSpeed = parseFloat(document.getElementById('windSpeedSlider').value);
+            const strategy = document.getElementById('strategy').value;
+
+            // 1. Temperature Impact (Degradation begins below 42F and above 52F)
+            let tempFactor = 1.0;
+            if (temp > 50) {
+                // Exponential degradation in heat
+                tempFactor += Math.pow((temp - 50) / 10, 1.7) * 0.018;
+            } else if (temp < 44) {
+                // Muscle stiffness degradation in cold
+                tempFactor += Math.pow((44 - temp) / 10, 1.3) * 0.008;
+            }
+
+            // 2. Humidity Heat Index Impact (Sweat evaporation penalty)
+            let humidityFactor = 1.0;
+            if (temp > 65 && humidity > 50) {
+                humidityFactor += ((humidity - 50) / 50) * ((temp - 55) / 45) * 0.04;
+            }
+
+            // Combined pace adjustment multiplier
+            let paceMultiplier = tempFactor * humidityFactor;
+
+            // 3. Wind Vector Calculations
+            let windPacePenaltyPerMile = 0; // in seconds
+            if (windSpeed > 0) {
+                if (windDir === 'head') {
+                    // Headwind penalty: roughly 0.5s/mile per 1 mph of headwind
+                    windPacePenaltyPerMile = windSpeed * 0.55;
+                } else if (windDir === 'tail') {
+                    // Tailwind assistance: roughly 0.16s/mile per 1 mph
+                    windPacePenaltyPerMile = -windSpeed * 0.16;
+                } else {
+                    // Crosswind slight stability drag
+                    windPacePenaltyPerMile = windSpeed * 0.08;
+                }
+            }
+
+            // Hydration and Sodium requirements
+            let fluidOzPerHour = 16;
+            let sodiumMgPerHour = 300;
+            if (temp > 55) {
+                fluidOzPerHour += Math.floor((temp - 55) * 0.35);
+                sodiumMgPerHour += Math.floor((temp - 55) * 12);
+            }
+            if (humidity > 60 && temp > 60) {
+                fluidOzPerHour += Math.floor((humidity - 60) * 0.08);
+                sodiumMgPerHour += Math.floor((humidity - 60) * 2.5);
+            }
+
+            // Safety Warning Levels
+            let safetyRisk = "LOW";
+            let safetyColorClass = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            let safetyMsg = "Safe running conditions.";
+            let riskIconName = "shield-check";
+
+            const heatIndex = temp + (humidity > 50 ? (temp - 60) * (humidity / 100) * 0.2 : 0);
+
+            if (heatIndex >= 90) {
+                safetyRisk = "CRITICAL HEAT";
+                safetyColorClass = "bg-red-500/20 text-red-400 border border-red-500/30";
+                safetyMsg = "Extreme heat stroke risk. Drastically adjust target time.";
+                riskIconName = "flame";
+            } else if (heatIndex >= 80) {
+                safetyRisk = "HIGH HEAT";
+                safetyColorClass = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
+                safetyMsg = "High heat load. Keep fluids high and cap pace.";
+                riskIconName = "thermometer-sun";
+            } else if (temp < 36) {
+                safetyRisk = "HYPOTHERMIA RISK";
+                safetyColorClass = "bg-sky-500/20 text-sky-400 border border-sky-500/30";
+                safetyMsg = "Freezing temperatures. Wear layers and keep moving.";
+                riskIconName = "snowflake";
+            }
+
+            // Apply strategy modifier profiles
+            // conservative start means slower first 5 miles, faster final
+            // aggressive means faster start, slow finish
+            let stratPacingModifiers = {
+                descent: 1.0,
+                flats: 1.0,
+                hills: 1.0,
+                sprint: 1.0
+            };
+
+            if (strategy === 'conservative') {
+                stratPacingModifiers.descent = 1.025; // 2.5% slower start to protect quads
+                stratPacingModifiers.flats = 0.995;
+                stratPacingModifiers.hills = 1.01;
+                stratPacingModifiers.sprint = 0.98;   // faster finish
+            } else if (strategy === 'aggressive') {
+                stratPacingModifiers.descent = 0.97;  // fast start
+                stratPacingModifiers.flats = 0.99;
+                stratPacingModifiers.hills = 1.05;    // heavy penalty on hills
+                stratPacingModifiers.sprint = 1.06;   // severe drop off at finish
+            }
+
+            // Calculate final segment splits
+            let adjustedTargetSeconds = 0;
+            const updatedSegments = segments.map((seg, idx) => {
+                let segMiles = 0;
+                let stratMod = 1.0;
+                if (idx === 0) { segMiles = 5; stratMod = stratPacingModifiers.descent; }
+                else if (idx === 1) { segMiles = 10; stratMod = stratPacingModifiers.flats; }
+                else if (idx === 2) { segMiles = 6; stratMod = stratPacingModifiers.hills; }
+                else { segMiles = 5.2; stratMod = stratPacingModifiers.sprint; }
+
+                // Grade factor adjustment
+                // Downhill accelerates but damages, uphill slows down
+                let gradeFactor = 1.0;
+                if (seg.avgGrade > 0) {
+                    gradeFactor = 1.0 + (seg.avgGrade * 0.04); // 4% slower per 1% uphill grade
+                } else {
+                    gradeFactor = 1.0 + (seg.avgGrade * 0.015); // 1.5% faster per 1% downhill grade
+                }
+
+                // Final pace computation
+                const adjustedPacePerMile = (flatPacePerMile * paceMultiplier * gradeFactor * stratMod) + windPacePenaltyPerMile;
+                adjustedTargetSeconds += adjustedPacePerMile * segMiles;
+
+                return {
+                    ...seg,
+                    adjustedPace: adjustedPacePerMile,
+                    milesCount: segMiles
+                };
+            });
+
+            // Update UI elements
+            const totalPacePct = (paceMultiplier - 1.0) * 100;
+            document.getElementById('paceFactorPct').innerText = (paceMultiplier * 100).toFixed(1) + "%";
+            document.getElementById('paceFactorDesc').innerText = totalPacePct === 0 ? "Optimal Pace Conditions" : (totalPacePct > 0 ? `+${totalPacePct.toFixed(1)}% Weather Penalty` : `${totalPacePct.toFixed(1)}% Cold Penalty`);
+            
+            // Suggested Finish Time formatting
+            document.getElementById('adjFinishTime').innerText = formatSecondsToTime(adjustedTargetSeconds);
+            const deltaSeconds = adjustedTargetSeconds - targetSecondsTotal;
+            document.getElementById('finishDelta').innerText = (deltaSeconds >= 0 ? "+" : "") + formatSecondsToTime(Math.abs(deltaSeconds));
+            if (deltaSeconds > 0) {
+                document.getElementById('finishDelta').className = "text-[10px] text-orange-400 font-bold mt-0.5";
+            } else {
+                document.getElementById('finishDelta').className = "text-[10px] text-emerald-400 font-bold mt-0.5";
+            }
+
+            document.getElementById('hydrationRate').innerText = `${fluidOzPerHour} oz/hr`;
+            document.getElementById('electrolyteRate').innerText = `${sodiumMgPerHour} mg Sodium/hr`;
+
+            // Risk Update
+            const riskBadge = document.getElementById('riskBadge');
+            riskBadge.innerText = safetyRisk;
+            riskBadge.className = `text-xs font-extrabold px-2 py-1 rounded ${safetyColorClass}`;
+            document.getElementById('riskMsg').innerText = safetyMsg;
+
+            // Render interactive table
+            const tableBody = document.getElementById('splitTableBody');
+            tableBody.innerHTML = "";
+
+            updatedSegments.forEach(seg => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/40 transition duration-150";
+                tr.innerHTML = `
+                    <td class="py-4 px-2 font-bold text-slate-200">${seg.name}</td>
+                    <td class="py-4 px-2 text-slate-400">Mile ${seg.miles}</td>
+                    <td class="py-4 px-2 font-semibold text-slate-300">${seg.elevationDesc}</td>
+                    <td class="py-4 px-2 text-slate-400">${windPacePenaltyPerMile >= 0 ? '+' : ''}${windPacePenaltyPerMile.toFixed(1)}s Wind Penalty</td>
+                    <td class="py-4 px-2 font-bold text-boston-gold text-sm">${formatSecondsToTime(seg.adjustedPace)} / mi</td>
+                    <td class="py-4 px-2 text-slate-400 max-w-xs leading-relaxed text-[11px]">${seg.desc}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // Update Chart
+            updateChartData(updatedSegments);
+        }
+
+        // Help format seconds to HH:MM:SS
+        function formatSecondsToTime(totalSeconds) {
+            const hrs = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = Math.floor(totalSeconds % 60);
+            return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Draw profile and pacing lines
+        function updateChartData(updatedSegments) {
+            const labels = ["Start (Hopkinton)", "Mile 5", "Mile 10", "Wellesley (15)", "Newton (16)", "Newton Hills (21)", "Finish (Copley)"];
+            const elevations = [463, 320, 210, 140, 55, 235, 15]; // Actual course points in feet
+            
+            // Map paces for matching segments
+            // Segment 0: 0-5 miles, Segment 1: 6-15, Segment 2: 16-21, Segment 3: 22-26.2
+            const segmentPacesInSecs = updatedSegments.map(s => s.adjustedPace);
+            const paceChartPoints = [
+                segmentPacesInSecs[0] / 60, // Start
+                segmentPacesInSecs[0] / 60, // Mile 5
+                segmentPacesInSecs[1] / 60, // Mile 10
+                segmentPacesInSecs[1] / 60, // Wellesley
+                segmentPacesInSecs[2] / 60, // Newton 16
+                segmentPacesInSecs[2] / 60, // Newton Hills 21
+                segmentPacesInSecs[3] / 60  // Finish
+            ];
+
+            if (myChart) {
+                myChart.data.datasets[0].data = elevations;
+                myChart.data.datasets[1].data = paceChartPoints;
+                myChart.update();
+            } else {
+                const ctx = document.getElementById('profileChart').getContext('2d');
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Course Elevation (ft)',
+                                data: elevations,
+                                borderColor: '#F2C12E',
+                                backgroundColor: 'rgba(242, 193, 46, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                yAxisID: 'y-elevation',
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Adjusted Target Pace (min/mi)',
+                                data: paceChartPoints,
+                                borderColor: '#1E62D0',
+                                backgroundColor: 'transparent',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#fff',
+                                yAxisID: 'y-pace',
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: '#94a3b8',
+                                    font: {
+                                        family: 'Plus Jakarta Sans',
+                                        weight: '600',
+                                        size: 11
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: {
+                                        family: 'Plus Jakarta Sans',
+                                        size: 10
+                                    }
+                                }
+                            },
+                            'y-elevation': {
+                                type: 'linear',
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Elevation (ft)',
+                                    color: '#F2C12E'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    color: '#F2C12E'
+                                }
+                            },
+                            'y-pace': {
+                                type: 'linear',
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Pace (min/mile)',
+                                    color: '#1E62D0'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                },
+                                ticks: {
+                                    color: '#1E62D0',
+                                    callback: function(value) {
+                                        const mins = Math.floor(value);
+                                        const secs = Math.round((value - mins) * 60);
+                                        return `${mins}:${secs.toString().padStart(2, '0')}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Copy plain text split card strategy to clipboard
+        function copyPacingToClipboard() {
+            const h = document.getElementById('targetHours').value;
+            const m = document.getElementById('targetMinutes').value;
+            const temp = document.getElementById('tempSlider').value;
+            const target = `${h}:${m.toString().padStart(2, '0')}`;
+            const adjFinish = document.getElementById('adjFinishTime').innerText;
+            const sweat = document.getElementById('hydrationRate').innerText;
+
+            let cardText = `=== BOSTON MARATHON WEATHER BLUEPRINT ===\n`;
+            cardText += `Base Target Finish: ${target}:00\n`;
+            cardText += `Current Simulated Temp: ${temp}°F\n`;
+            cardText += `Adjusted Target Finish: ${adjFinish}\n`;
+            cardText += `Hydration Rate: ${sweat}\n\n`;
+            cardText += `SEGMENT STRATEGY:\n`;
+            
+            const rows = document.querySelectorAll('#splitTableBody tr');
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                if (cols.length >= 5) {
+                    cardText += `- ${cols[0].innerText} (${cols[1].innerText}): Target Pace ${cols[4].innerText}\n`;
+                }
+            });
+
+            navigator.clipboard.writeText(cardText).then(() => {
+                alert("Split pacing card copied to clipboard. Paste it into your notes.");
+            });
+        }
+
+        // Apply environment year presets
+        function applyPreset(preset) {
+            const tempSlider = document.getElementById('tempSlider');
+            const humiditySlider = document.getElementById('humiditySlider');
+            const windDir = document.getElementById('windDir');
+            const windSpeedSlider = document.getElementById('windSpeedSlider');
+
+            if (preset === '2026') {
+                tempSlider.value = 48; // Cool start (43F) rising to 55F (48F avg)
+                humiditySlider.value = 75; // Cloudy with light showers
+                windDir.value = 'tail'; // Favorable westerly tailwind
+                windSpeedSlider.value = 12; // 5-15 mph tailwind
+            } else if (preset === '2025') {
+                tempSlider.value = 54; // Upper 40s to 63F (54F avg)
+                humiditySlider.value = 55; // Seasonable dry day
+                windDir.value = 'cross'; // Light and variable winds
+                windSpeedSlider.value = 7; // Average 7 mph
+            } else if (preset === '2024') {
+                tempSlider.value = 64; // Sunny day, mid-50s to near 70F
+                humiditySlider.value = 45; // Warm, dry conditions
+                windDir.value = 'tail'; // Westerly tailwind/crosswind
+                windSpeedSlider.value = 10;
+            } else if (preset === '2018') {
+                tempSlider.value = 38; // Extreme freezing storm
+                humiditySlider.value = 95; // Heavy driving rain
+                windDir.value = 'head'; // Strong headwind
+                windSpeedSlider.value = 22; // Gale gusts
+            }
+            
+            // Trigger UI updates
+            updateSlidersUI();
+            calculateAdjustments();
+        }
+
+        // Sync slider numerical values in labels
+        function updateSlidersUI() {
+            document.getElementById('tempVal').innerText = `${document.getElementById('tempSlider').value}°F`;
+            document.getElementById('humidityVal').innerText = `${document.getElementById('humiditySlider').value}%`;
+            document.getElementById('windSpeedVal').innerText = `${document.getElementById('windSpeedSlider').value} mph`;
+        }
+
+        // Initialize event listeners
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('input', () => {
+                updateSlidersUI();
+                calculateAdjustments();
+            });
+        });
+
+        // First load rendering
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateSlidersUI();
+            calculateAdjustments();
+        });
+    </script>
+</body>
+</html>
