@@ -1,373 +1,404 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heartbreak Weather: Human Feedback Portal</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
-                    },
-                    colors: {
-                        boston: {
-                            blue: '#0A3B8C',
-                            lightBlue: '#1E62D0',
-                            gold: '#F2C12E',
-                            accent: '#F2A007',
-                            dark: '#0B0F19',
-                            card: '#161F30'
-                        }
-                    }
-                }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heartbreak Weather: Human Feedback Portal</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
+          },
+          colors: {
+            boston: {
+              blue: '#0A3B8C',
+              lightBlue: '#1E62D0',
+              gold: '#F2C12E',
+              accent: '#F2A007',
+              dark: '#0B0F19',
+              card: '#161F30'
             }
+          }
         }
-    </script>
-    <style>
-        body {
-            background-color: #080C14;
-            background-image: radial-gradient(circle at 50% 0%, #16243d 0%, #080c14 70%);
-            background-attachment: fixed;
-        }
-        .glass-panel {
-            background: rgba(22, 31, 48, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .glow-gold:hover {
-            box-shadow: 0 0 15px rgba(242, 193, 46, 0.35);
-        }
-        .custom-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #F2C12E;
-            cursor: pointer;
-            box-shadow: 0 0 6px rgba(242, 193, 46, 0.6);
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #080C14;
+      background-image: radial-gradient(circle at 50% 0%, #16243d 0%, #080c14 70%);
+      background-attachment: fixed;
+    }
+
+    .glass-panel {
+      background: rgba(22, 31, 48, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .glow-gold:hover {
+      box-shadow: 0 0 15px rgba(242, 193, 46, 0.35);
+    }
+
+    .custom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #F2C12E;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(242, 193, 46, 0.6);
+    }
+  </style>
 </head>
+
 <body class="text-slate-100 font-sans min-h-screen pb-16">
 
-    <!-- Header / Navigation -->
-    <header class="relative overflow-hidden border-b border-slate-800 py-6 px-4 md:px-8 mb-8">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-            <div class="flex items-center gap-3">
-                <div class="bg-boston-gold/10 p-2.5 rounded-xl border border-boston-gold/30">
-                    <i data-lucide="database" class="text-boston-gold w-8 h-8"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-boston-gold via-yellow-200 to-white bg-clip-text text-transparent">
-                        Feedback Loop Portal
-                    </h1>
-                    <p class="text-xs text-slate-400 font-medium">
-                        Human-in-the-Loop Performance Collector
-                    </p>
-                </div>
-            </div>
-            
-            <a href="index.html" class="text-xs px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 text-slate-300 font-semibold transition flex items-center gap-1.5">
-                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                Back to Simulator
-            </a>
+  <!-- Header / Navigation -->
+  <header class="relative overflow-hidden border-b border-slate-800 py-6 px-4 md:px-8 mb-8">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+      <div class="flex items-center gap-3">
+        <div class="bg-boston-gold/10 p-2.5 rounded-xl border border-boston-gold/30">
+          <i data-lucide="database" class="text-boston-gold w-8 h-8"></i>
         </div>
-    </header>
+        <div>
+          <h1
+            class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-boston-gold via-yellow-200 to-white bg-clip-text text-transparent">
+            Feedback Loop Portal
+          </h1>
+          <p class="text-xs text-slate-400 font-medium">
+            Human-in-the-Loop Performance Collector
+          </p>
+        </div>
+      </div>
 
-    <!-- Main Workspace -->
-    <main class="max-w-5xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-12 gap-8">
-        
-        <!-- Left Column: Feedback Input Form (Column span: 7) -->
-        <section class="md:col-span-7 space-y-6">
-            
-            <form id="feedbackForm" onsubmit="handleFormSubmit(event)" class="glass-panel rounded-3xl p-6 shadow-xl space-y-6">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
-                    <i data-lucide="pen-tool" class="text-boston-lightBlue w-5 h-5"></i>
-                    <h2 class="font-bold text-lg text-slate-100">Submit Race Outcome</h2>
-                </div>
+      <a href="index.html"
+        class="text-xs px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 text-slate-300 font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        Back to Simulator
+      </a>
+    </div>
+  </header>
 
-                <!-- Runner Targets vs Actuals -->
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">1. Pacing & Time Outcome</h3>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Target Finish</label>
-                            <input id="targetTime" type="text" placeholder="e.g. 3:15:00" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-boston-gold placeholder-slate-600 focus:outline-none focus:border-boston-gold/60" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Actual Finish</label>
-                            <input id="actualTime" type="text" placeholder="e.g. 3:18:45" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-400 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60" required>
-                        </div>
-                    </div>
+  <!-- Main Workspace -->
+  <main class="max-w-5xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-12 gap-8">
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Pacing Strategy Attempted</label>
-                        <select id="strategy" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
-                            <option value="conservative">Conservative Start</option>
-                            <option value="even">Even Pacing</option>
-                            <option value="aggressive">Aggressive Front-Half</option>
-                        </select>
-                    </div>
-                </div>
+    <!-- Left Column: Feedback Input Form (Column span: 7) -->
+    <section class="md:col-span-7 space-y-6">
 
-                <!-- Environment Experienced -->
-                <div class="space-y-4 pt-2 border-t border-slate-800/40">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">2. Environmental Conditions</h3>
-                    
-                    <div class="grid grid-cols-1 gap-3">
-    <div id="weatherInfo" class="text-sm text-slate-300">Loading weather data...</div>
-    <div id="map" class="h-64 w-full rounded-lg"></div>
-    <!-- Hidden inputs for downstream calculations -->
-    <input type="hidden" id="temp" value=""/>
-    <input type="hidden" id="humidity" value=""/>
-    <input type="hidden" id="wind" value=""/>
-</div>
-                </div>
+      <form id="feedbackForm" onsubmit="handleFormSubmit(event)"
+        class="glass-panel rounded-3xl p-6 shadow-xl space-y-6">
+        <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
+          <i data-lucide="pen-tool" class="text-boston-lightBlue w-5 h-5"></i>
+          <h2 class="font-bold text-lg text-slate-100">Submit Race Outcome</h2>
+        </div>
 
-                <!-- Physiological feedback -->
-                <div class="space-y-4 pt-2 border-t border-slate-800/40">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">3. Physiological Performance Metrics</h3>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs text-slate-500 font-semibold mb-1">Avg Hydration (oz/hr)</label>
-                            <input id="hydration" type="number" min="0" max="50" value="20" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-500 font-semibold mb-1">Sodium Intake (mg/hr)</label>
-                            <input id="sodium" type="number" min="0" max="1500" value="400" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
-                        </div>
-                    </div>
+        <!-- Runner Targets vs Actuals -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">1. Pacing & Time Outcome</h3>
 
-                    <!-- Sliders for Muscle Cramps & Fatigue -->
-                    <div class="space-y-3">
-                        <div>
-                            <div class="flex justify-between text-xs font-semibold text-slate-400">
-                                <span>Muscle Cramping Severity</span>
-                                <span id="crampingVal" class="text-boston-gold font-bold">1 / 10</span>
-                            </div>
-                            <input id="cramping" type="range" min="1" max="10" value="1" oninput="document.getElementById('crampingVal').innerText = this.value + ' / 10'" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs font-semibold text-slate-400">
-                                <span>Quad Downhill Fatigue</span>
-                                <span id="fatigueVal" class="text-boston-gold font-bold">3 / 10</span>
-                            </div>
-                            <input id="fatigue" type="range" min="1" max="10" value="3" oninput="document.getElementById('fatigueVal').innerText = this.value + ' / 10'" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Equipment & Gear Notes -->
-                <div class="space-y-4 pt-2 border-t border-slate-800/40">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">4. Equipment & Gear Log</h3>
-                    
-                    <div class="space-y-3 text-xs">
-                        <div>
-                            <label class="block font-semibold text-slate-400 mb-1">Running Shoes</label>
-                            <input id="shoes" type="text" placeholder="e.g. Nike Alphafly 3, Adidas Adios Pro 3" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 font-semibold text-slate-300 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block font-semibold text-slate-400 mb-1">Dressing / Outfit</label>
-                                <input id="dressing" type="text" placeholder="e.g. Singlet, arm sleeves" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 font-semibold text-slate-300 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60">
-                            </div>
-                            <div>
-                                <label class="block font-semibold text-slate-400 mb-1">Water & Nutrition Supply</label>
-                                <input id="nutrition" type="text" placeholder="e.g. Maurten Hydrogel 100" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 font-semibold text-slate-300 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-boston-gold hover:bg-yellow-400 text-boston-dark font-bold text-sm tracking-wide rounded-xl shadow-lg transition glow-gold uppercase">
-                    Log Outcome & Retrain Model
-                </button>
-
-            </form>
-
-        </section>
-
-        <!-- Right Column: Visual Analysis & Local History (Column span: 5) -->
-        <section class="md:col-span-5 space-y-6">
-            
-            <!-- Real-Time Model Analysis / Coach Box -->
-            <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
-                    <i data-lucide="brain-circuit" class="text-boston-gold w-5 h-5"></i>
-                    <h2 class="font-bold text-base text-slate-100">Feedback Model Insights</h2>
-                </div>
-
-                <div id="noDataInsight" class="text-xs text-slate-500 py-6 text-center leading-relaxed">
-                    Submit a race outcome to generate AI analysis, pace deviation scores, and customized pacing recommendations.
-                </div>
-
-                <div id="insightPanel" class="hidden space-y-4">
-                    <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 text-xs">
-                        <div class="flex justify-between font-bold mb-1">
-                            <span class="text-slate-400">Pace Deviation Error</span>
-                            <span id="deviationVal" class="text-orange-400">+2.4%</span>
-                        </div>
-                        <div class="w-full bg-slate-900 rounded-full h-2">
-                            <div id="deviationBar" class="bg-orange-400 h-2 rounded-full" style="width: 24%"></div>
-                        </div>
-                        <p class="text-[10px] text-slate-500 font-semibold mt-2 leading-relaxed">
-                            Positive deviation indicates the environmental factors or initial downhill profile degraded pacing performance more severely than predictions.
-                        </p>
-                    </div>
-
-                    <div class="bg-boston-blue/20 p-4 rounded-2xl border border-boston-blue/30 text-xs">
-                        <span class="text-boston-gold font-bold block mb-1">Virtual Coach Recommendations:</span>
-                        <p id="coachTip" class="text-slate-300 leading-relaxed text-[11px]">
-                            Analyzing profile data...
-                        </p>
-                    </div>
-                </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Target Finish</label>
+              <input id="targetTime" type="text" placeholder="e.g. 3:15:00"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-boston-gold placeholder-slate-600 focus:outline-none focus:border-boston-gold/60"
+                required>
             </div>
-
-            <!-- Historical Data Export Widget -->
-            <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="file-json" class="text-boston-lightBlue w-5 h-5"></i>
-                        <h2 class="font-bold text-base text-slate-100">Dataset Export</h2>
-                    </div>
-                    <span id="recordCount" class="text-[10px] font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">0 logs</span>
-                </div>
-
-                <div class="flex gap-2">
-                    <button onclick="exportJSON()" class="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs rounded-xl border border-slate-800 transition flex items-center justify-center gap-1.5">
-                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                        Download JSON
-                    </button>
-                    <button onclick="clearLogs()" class="py-2 px-3 bg-red-950/20 hover:bg-red-950/40 text-red-400 font-semibold text-xs rounded-xl border border-red-900/30 transition flex items-center justify-center">
-                        <i data-lucide="trash" class="w-3.5 h-3.5"></i>
-                    </button>
-                </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Actual Finish</label>
+              <input id="actualTime" type="text" placeholder="e.g. 3:18:45"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-400 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60"
+                required>
             </div>
+          </div>
 
-        </section>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Pacing Strategy Attempted</label>
+            <select id="strategy"
+              class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
+              <option value="conservative">Conservative Start</option>
+              <option value="even">Even Pacing</option>
+              <option value="aggressive">Aggressive Front-Half</option>
+            </select>
+          </div>
+        </div>
 
-        <!-- Full-Width Bottom Table: Submitted Log History -->
-        <section class="md:col-span-12 glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="history" class="text-boston-lightBlue w-5 h-5"></i>
-                    <h2 class="font-bold text-base text-slate-100">Outcomes Log Table</h2>
-                </div>
+        <!-- Environment Experienced -->
+        <div class="space-y-4 pt-2 border-t border-slate-800/40">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">2. Environmental Conditions</h3>
+
+          <div class="grid grid-cols-1 gap-3">
+            <div id="weatherInfo" class="text-sm text-slate-300">Loading weather data...</div>
+            <div id="map" class="h-64 w-full rounded-lg"></div>
+            <!-- Hidden inputs for downstream calculations -->
+            <input type="hidden" id="temp" value="" />
+            <input type="hidden" id="humidity" value="" />
+            <input type="hidden" id="wind" value="" />
+          </div>
+        </div>
+
+        <!-- Physiological feedback -->
+        <div class="space-y-4 pt-2 border-t border-slate-800/40">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">3. Physiological Performance Metrics</h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-500 font-semibold mb-1">Avg Hydration (oz/hr)</label>
+              <input id="hydration" type="number" min="0" max="50" value="20"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
             </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="border-b border-slate-800/80 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                            <th class="py-3 px-2">Date Logged</th>
-                            <th class="py-3 px-2 text-boston-gold">Target Time</th>
-                            <th class="py-3 px-2 text-emerald-400">Actual Time</th>
-                            <th class="py-3 px-2">Strategy</th>
-                            <th class="py-3 px-2">Temp & Humidity</th>
-                            <th class="py-3 px-2">Wind</th>
-                            <th class="py-3 px-2">Muscle Cramps</th>
-                            <th class="py-3 px-2">Quad Fatigue</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsTableBody" class="divide-y divide-slate-900">
-                        <!-- Populated dynamically -->
-                    </tbody>
-                </table>
+            <div>
+              <label class="block text-xs text-slate-500 font-semibold mb-1">Sodium Intake (mg/hr)</label>
+              <input id="sodium" type="number" min="0" max="1500" value="400"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 focus:outline-none focus:border-boston-gold/60">
             </div>
-        </section>
+          </div>
 
-    </main>
+          <!-- Sliders for Muscle Cramps & Fatigue -->
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs font-semibold text-slate-400">
+                <span>Muscle Cramping Severity</span>
+                <span id="crampingVal" class="text-boston-gold font-bold">1 / 10</span>
+              </div>
+              <input id="cramping" type="range" min="1" max="10" value="1"
+                oninput="document.getElementById('crampingVal').innerText = this.value + ' / 10'"
+                class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-semibold text-slate-400">
+                <span>Quad Downhill Fatigue</span>
+                <span id="fatigueVal" class="text-boston-gold font-bold">3 / 10</span>
+              </div>
+              <input id="fatigue" type="range" min="1" max="10" value="3"
+                oninput="document.getElementById('fatigueVal').innerText = this.value + ' / 10'"
+                class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-slider">
+            </div>
+          </div>
+        </div>
 
-    <footer class="max-w-5xl mx-auto mt-16 px-4 md:px-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-8">
-        <p>Human-in-the-Loop active learning module. Simulated database writes are stored locally in the browser sandbox.</p>
-    </footer>
+        <!-- Equipment & Gear Notes -->
+        <div class="space-y-4 pt-2 border-t border-slate-800/40">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide">4. Equipment & Gear Log</h3>
 
-    <!-- Logic -->
-    <script>
-        // Load existing logs from localStorage
-        let logs = JSON.parse(localStorage.getItem('marathon_outcomes') || '[]');
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-400 mb-1">Running Shoes</label>
+              <input id="shoes" type="text" placeholder="e.g. Nike Alphafly 3, Adidas Adios Pro 3"
+                class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 font-semibold text-slate-300 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-400 mb-1">Dressing / Outfit</label>
+                <input id="dressing" type="text" placeholder="e.g. Singlet, arm sleeves"
+                  class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 font-semibold text-slate-300 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-400 mb-1">Water & Nutrition Supply</label>
+                <input id="nutrition" type="text" placeholder="e.g. Maurten Hydrogel 100"
+                  class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 font-semibold text-slate-300 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60">
+              </div>
+            </div>
+          </div>
+        </div>
 
-        function updateLogsUI() {
-            document.getElementById('recordCount').innerText = `${logs.length} logs`;
-            const tbody = document.getElementById('logsTableBody');
-            tbody.innerHTML = "";
+        <button type="submit"
+          class="w-full py-3 bg-boston-gold hover:bg-yellow-400 text-boston-dark font-bold text-sm tracking-wide rounded-xl shadow-lg transition glow-gold uppercase">
+          Log Outcome & Retrain Model
+        </button>
 
-            if (logs.length === 0) {
-                tbody.innerHTML = `
+      </form>
+
+    </section>
+
+    <!-- Right Column: Visual Analysis & Local History (Column span: 5) -->
+    <section class="md:col-span-5 space-y-6">
+
+      <!-- Real-Time Model Analysis / Coach Box -->
+      <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center gap-2 pb-2 border-b border-slate-800/60">
+          <i data-lucide="brain-circuit" class="text-boston-gold w-5 h-5"></i>
+          <h2 class="font-bold text-base text-slate-100">Feedback Model Insights</h2>
+        </div>
+
+        <div id="noDataInsight" class="text-xs text-slate-500 py-6 text-center leading-relaxed">
+          Submit a race outcome to generate AI analysis, pace deviation scores, and customized pacing recommendations.
+        </div>
+
+        <div id="insightPanel" class="hidden space-y-4">
+          <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 text-xs">
+            <div class="flex justify-between font-bold mb-1">
+              <span class="text-slate-400">Pace Deviation Error</span>
+              <span id="deviationVal" class="text-orange-400">+2.4%</span>
+            </div>
+            <div class="w-full bg-slate-900 rounded-full h-2">
+              <div id="deviationBar" class="bg-orange-400 h-2 rounded-full" style="width: 24%"></div>
+            </div>
+            <p class="text-[10px] text-slate-500 font-semibold mt-2 leading-relaxed">
+              Positive deviation indicates the environmental factors or initial downhill profile degraded pacing
+              performance more severely than predictions.
+            </p>
+          </div>
+
+          <div class="bg-boston-blue/20 p-4 rounded-2xl border border-boston-blue/30 text-xs">
+            <span class="text-boston-gold font-bold block mb-1">Virtual Coach Recommendations:</span>
+            <p id="coachTip" class="text-slate-300 leading-relaxed text-[11px]">
+              Analyzing profile data...
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Data Export Widget -->
+      <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
+          <div class="flex items-center gap-2">
+            <i data-lucide="file-json" class="text-boston-lightBlue w-5 h-5"></i>
+            <h2 class="font-bold text-base text-slate-100">Dataset Export</h2>
+          </div>
+          <span id="recordCount"
+            class="text-[10px] font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">0 logs</span>
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="exportJSON()"
+            class="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs rounded-xl border border-slate-800 transition flex items-center justify-center gap-1.5">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            Download JSON
+          </button>
+          <button onclick="clearLogs()"
+            class="py-2 px-3 bg-red-950/20 hover:bg-red-950/40 text-red-400 font-semibold text-xs rounded-xl border border-red-900/30 transition flex items-center justify-center">
+            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Full-Width Bottom Table: Submitted Log History -->
+    <section class="md:col-span-12 glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
+        <div class="flex items-center gap-2">
+          <i data-lucide="history" class="text-boston-lightBlue w-5 h-5"></i>
+          <h2 class="font-bold text-base text-slate-100">Outcomes Log Table</h2>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-800/80 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+              <th class="py-3 px-2">Date Logged</th>
+              <th class="py-3 px-2 text-boston-gold">Target Time</th>
+              <th class="py-3 px-2 text-emerald-400">Actual Time</th>
+              <th class="py-3 px-2">Strategy</th>
+              <th class="py-3 px-2">Temp & Humidity</th>
+              <th class="py-3 px-2">Wind</th>
+              <th class="py-3 px-2">Muscle Cramps</th>
+              <th class="py-3 px-2">Quad Fatigue</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody" class="divide-y divide-slate-900">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer
+    class="max-w-5xl mx-auto mt-16 px-4 md:px-8 text-center text-xs text-slate-500 border-t border-slate-900 pt-8">
+    <p>Human-in-the-Loop active learning module. Simulated database writes are stored locally in the browser sandbox.
+    </p>
+  </footer>
+
+  <!-- Logic -->
+  <script>
+    // Load existing logs from localStorage
+    let logs = JSON.parse(localStorage.getItem('marathon_outcomes') || '[]');
+
+    function updateLogsUI() {
+      document.getElementById('recordCount').innerText = `${logs.length} logs`;
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = "";
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="py-8 text-center text-slate-500 italic">No feedback entries recorded yet.</td>
                     </tr>
                 `;
-                document.getElementById('insightPanel').classList.add('hidden');
-                document.getElementById('noDataInsight').classList.remove('hidden');
-                return;
-            }
+        document.getElementById('insightPanel').classList.add('hidden');
+        document.getElementById('noDataInsight').classList.remove('hidden');
+        return;
+      }
 
-            // Show insight from latest record
-            const latest = logs[logs.length - 1];
-            document.getElementById('noDataInsight').classList.add('hidden');
-            document.getElementById('insightPanel').classList.remove('hidden');
+      // Show insight from latest record
+      const latest = logs[logs.length - 1];
+      document.getElementById('noDataInsight').classList.add('hidden');
+      document.getElementById('insightPanel').classList.remove('hidden');
 
-            const targetSec = parseTimeToSeconds(latest.targetTime);
-            const actualSec = parseTimeToSeconds(latest.actualTime);
-            
-            if (targetSec > 0 && actualSec > 0) {
-                const deviation = ((actualSec - targetSec) / targetSec) * 100;
-                const devText = (deviation >= 0 ? '+' : '') + deviation.toFixed(1) + '%';
-                
-                const devElem = document.getElementById('deviationVal');
-                devElem.innerText = devText;
-                if (deviation > 5) {
-                    devElem.className = "text-red-400 font-bold";
-                    document.getElementById('deviationBar').className = "bg-red-400 h-2 rounded-full";
-                } else if (deviation > 0) {
-                    devElem.className = "text-orange-400 font-bold";
-                    document.getElementById('deviationBar').className = "bg-orange-400 h-2 rounded-full";
-                } else {
-                    devElem.className = "text-emerald-400 font-bold";
-                    document.getElementById('deviationBar').className = "bg-emerald-400 h-2 rounded-full";
-                }
-                
-                // Adjust bar width securely between 0% and 100%
-                const barWidth = Math.min(Math.max(Math.abs(deviation) * 5, 5), 100);
-                document.getElementById('deviationBar').style.width = `${barWidth}%`;
+      const targetSec = parseTimeToSeconds(latest.targetTime);
+      const actualSec = parseTimeToSeconds(latest.actualTime);
 
-                // Custom AI recommendations based on outcomes
-                let recommendation = "";
-                if (latest.fatigue > 6 && latest.strategy === 'aggressive') {
-                    recommendation = "High quad fatigue combined with an aggressive front-half strategy on the early Hopkinton-to-Framingham drop caused significant slowdown in later miles. Recommend shifting target strategy to Conservative Start next race.";
-                } else if (latest.cramping > 6 && latest.hydration < 16) {
-                    recommendation = "Severe muscle cramping reported along with low fluid intake rates. Increase fluid intake to at least 22 oz/hour under current simulated temperatures, and target 400+ mg sodium/hour.";
-                } else if (deviation > 3 && latest.temp > 70) {
-                    recommendation = "Pace deviation was high due to heat stress in temperatures above 70°F. Suggest adding heat acclimation sessions to training profiles to reduce target time degradation next spring.";
-                } else {
-                    recommendation = "Excellent execution. Pacing outcomes aligned within predictive model variance boundaries. Model calibration values are stable.";
-                }
-                document.getElementById('coachTip').innerText = recommendation;
-            }
+      if (targetSec > 0 && actualSec > 0) {
+        const deviation = ((actualSec - targetSec) / targetSec) * 100;
+        const devText = (deviation >= 0 ? '+' : '') + deviation.toFixed(1) + '%';
 
-            // Fill table
-            logs.slice().reverse().forEach(log => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-900/40 transition";
-                tr.innerHTML = `
+        const devElem = document.getElementById('deviationVal');
+        devElem.innerText = devText;
+        if (deviation > 5) {
+          devElem.className = "text-red-400 font-bold";
+          document.getElementById('deviationBar').className = "bg-red-400 h-2 rounded-full";
+        } else if (deviation > 0) {
+          devElem.className = "text-orange-400 font-bold";
+          document.getElementById('deviationBar').className = "bg-orange-400 h-2 rounded-full";
+        } else {
+          devElem.className = "text-emerald-400 font-bold";
+          document.getElementById('deviationBar').className = "bg-emerald-400 h-2 rounded-full";
+        }
+
+        // Adjust bar width securely between 0% and 100%
+        const barWidth = Math.min(Math.max(Math.abs(deviation) * 5, 5), 100);
+        document.getElementById('deviationBar').style.width = `${barWidth}%`;
+
+        // Custom AI recommendations based on outcomes
+        let recommendation = "";
+        if (latest.fatigue > 6 && latest.strategy === 'aggressive') {
+          recommendation = "High quad fatigue combined with an aggressive front-half strategy on the early Hopkinton-to-Framingham drop caused significant slowdown in later miles. Recommend shifting target strategy to Conservative Start next race.";
+        } else if (latest.cramping > 6 && latest.hydration < 16) {
+          recommendation = "Severe muscle cramping reported along with low fluid intake rates. Increase fluid intake to at least 22 oz/hour under current simulated temperatures, and target 400+ mg sodium/hour.";
+        } else if (deviation > 3 && latest.temp > 70) {
+          recommendation = "Pace deviation was high due to heat stress in temperatures above 70°F. Suggest adding heat acclimation sessions to training profiles to reduce target time degradation next spring.";
+        } else {
+          recommendation = "Excellent execution. Pacing outcomes aligned within predictive model variance boundaries. Model calibration values are stable.";
+        }
+        document.getElementById('coachTip').innerText = recommendation;
+      }
+
+      // Fill table
+      logs.slice().reverse().forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-900/40 transition";
+        tr.innerHTML = `
                     <td class="py-3 px-2 font-semibold text-slate-400">${log.date}</td>
                     <td class="py-3 px-2 font-bold text-boston-gold">${log.targetTime}</td>
                     <td class="py-3 px-2 font-bold text-emerald-400">${log.actualTime}</td>
@@ -377,115 +408,141 @@
                     <td class="py-3 px-2 font-semibold text-slate-300">${log.cramping} / 10</td>
                     <td class="py-3 px-2 font-semibold text-slate-300">${log.fatigue} / 10</td>
                 `;
-                tbody.appendChild(tr);
-            });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Helper to convert time HH:MM:SS to total seconds
+    function parseTimeToSeconds(timeStr) {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 3) {
+        return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+      } else if (parts.length === 2) {
+        return (parts[0] * 60) + parts[1];
+      }
+      return 0;
+    }
+
+    // Handle outcomes form submission
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const date = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const newLog = {
+        date: date,
+        targetTime: document.getElementById('targetTime').value,
+        actualTime: document.getElementById('actualTime').value,
+        strategy: document.getElementById('strategy').value,
+        temp: parseInt(document.getElementById('temp').value),
+        humidity: parseInt(document.getElementById('humidity').value),
+        wind: parseInt(document.getElementById('wind').value),
+        hydration: parseInt(document.getElementById('hydration').value),
+        sodium: parseInt(document.getElementById('sodium').value),
+        cramping: parseInt(document.getElementById('cramping').value),
+        fatigue: parseInt(document.getElementById('fatigue').value)
+      };
+
+      logs.push(newLog);
+      localStorage.setItem('marathon_outcomes', JSON.stringify(logs));
+
+      // Clear inputs
+      document.getElementById('targetTime').value = "";
+      document.getElementById('actualTime').value = "";
+
+      updateLogsUI();
+      alert("Outcome successfully logged. Model adjusted successfully.");
+    }
+
+    // Export data
+    function exportJSON() {
+      if (logs.length === 0) {
+        alert("No records to export.");
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "boston_marathon_outcomes.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // Clear local storage logs
+    function clearLogs() {
+      if (confirm("Clear all logged feedback data? This cannot be undone.")) {
+        logs = [];
+        localStorage.removeItem('marathon_outcomes');
+        updateLogsUI();
+      }
+    }
+
+    // First rendering
+    window.addEventListener('DOMContentLoaded', () => {
+      // Initialize map and fetch weather data
+      const map = L.map('map').setView([42.3601, -71.0589], 10);
+      // Simplified Boston Marathon route as GeoJSON (key points)
+      const marathonRoute = {
+        "type": "Feature",
+        "properties": {"name": "Boston Marathon Route"},
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [-71.7241, 42.3365], // Hopkinton start
+            [-71.6667, 42.3023], // Ashland
+            [-71.5989, 42.2598], // Natick
+            [-71.5119, 42.2250], // Wellesley
+            [-71.4262, 42.1868], // Newton
+            [-71.3795, 42.1580], // Waltham
+            [-71.3473, 42.1260], // Cambridge
+            [-71.0589, 42.3601]  // Boston finish (center for map)
+          ]
         }
-
-        // Helper to convert time HH:MM:SS to total seconds
-        function parseTimeToSeconds(timeStr) {
-            const parts = timeStr.split(':').map(Number);
-            if (parts.length === 3) {
-                return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-            } else if (parts.length === 2) {
-                return (parts[0] * 60) + parts[1];
-            }
-            return 0;
+      };
+      // Add route to map with styling
+      L.geoJSON(marathonRoute, {
+        style: function (feature) {
+          return {color: '#F2C12E', weight: 4, opacity: 0.8};
         }
+      }).addTo(map);
 
-        // Handle outcomes form submission
-        function handleFormSubmit(event) {
-            event.preventDefault();
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
 
-            const date = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            
-            const newLog = {
-                date: date,
-                targetTime: document.getElementById('targetTime').value,
-                actualTime: document.getElementById('actualTime').value,
-                strategy: document.getElementById('strategy').value,
-                temp: parseInt(document.getElementById('temp').value),
-                humidity: parseInt(document.getElementById('humidity').value),
-                wind: parseInt(document.getElementById('wind').value),
-                hydration: parseInt(document.getElementById('hydration').value),
-                sodium: parseInt(document.getElementById('sodium').value),
-                cramping: parseInt(document.getElementById('cramping').value),
-                fatigue: parseInt(document.getElementById('fatigue').value)
-            };
+      const weatherInfoEl = document.getElementById('weatherInfo');
 
-            logs.push(newLog);
-            localStorage.setItem('marathon_outcomes', JSON.stringify(logs));
-            
-            // Clear inputs
-            document.getElementById('targetTime').value = "";
-            document.getElementById('actualTime').value = "";
-
-            updateLogsUI();
-            alert("Outcome successfully logged. Model adjusted successfully.");
+      async function fetchWeather(lat, lon) {
+        try {
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relativehumidity_2m,windspeed_10m`;
+          const res = await fetch(url);
+          const data = await res.json();
+          const cw = data.current_weather;
+          const tempF = (cw.temperature * 9 / 5) + 32; // assume Celsius to Fahrenheit
+          const humidity = data.hourly.relativehumidity_2m[0];
+          const windMph = (cw.windspeed * 0.621371);
+          document.getElementById('temp').value = Math.round(tempF);
+          document.getElementById('humidity').value = humidity;
+          document.getElementById('wind').value = Math.round(windMph);
+          weatherInfoEl.innerHTML = `Temp: ${Math.round(tempF)}°F | Humidity: ${humidity}% | Wind: ${Math.round(windMph)} mph`;
+        } catch (e) {
+          weatherInfoEl.textContent = 'Unable to load weather data';
         }
+      }
 
-        // Export data
-        function exportJSON() {
-            if (logs.length === 0) {
-                alert("No records to export.");
-                return;
-            }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "boston_marathon_outcomes.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
+      // Initial fetch
+      fetchWeather(42.3601, -71.0589);
 
-        // Clear local storage logs
-        function clearLogs() {
-            if (confirm("Clear all logged feedback data? This cannot be undone.")) {
-                logs = [];
-                localStorage.removeItem('marathon_outcomes');
-                updateLogsUI();
-            }
-        }
+      // Update on map move
+      map.on('moveend', () => {
+        const center = map.getCenter();
+        fetchWeather(center.lat, center.lng);
+      });
 
-        // First rendering
-        window.addEventListener('DOMContentLoaded', () => {
-            // Initialize map and fetch weather data
-            const map = L.map('map').setView([42.3601, -71.0589], 10);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-
-            const weatherInfoEl = document.getElementById('weatherInfo');
-
-            async function fetchWeather(lat, lon) {
-                try {
-                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relativehumidity_2m,windspeed_10m`;
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    const cw = data.current_weather;
-                    const tempF = (cw.temperature * 9/5) + 32; // assume Celsius to Fahrenheit
-                    const humidity = data.hourly.relativehumidity_2m[0];
-                    const windMph = (cw.windspeed * 0.621371);
-                    document.getElementById('temp').value = Math.round(tempF);
-                    document.getElementById('humidity').value = humidity;
-                    document.getElementById('wind').value = Math.round(windMph);
-                    weatherInfoEl.innerHTML = `Temp: ${Math.round(tempF)}°F | Humidity: ${humidity}% | Wind: ${Math.round(windMph)} mph`;
-                } catch (e) {
-                    weatherInfoEl.textContent = 'Unable to load weather data';
-                }
-            }
-
-            // Initial fetch
-            fetchWeather(42.3601, -71.0589);
-
-            // Update on map move
-            map.on('moveend', () => {
-                const center = map.getCenter();
-                fetchWeather(center.lat, center.lng);
-            });
-
-            updateLogsUI();
-        });
-    </script>
+      updateLogsUI();
+    });
+  </script>
 </body>
+
 </html>
