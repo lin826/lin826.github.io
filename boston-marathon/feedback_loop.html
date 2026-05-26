@@ -460,30 +460,6 @@
     window.addEventListener('DOMContentLoaded', () => {
       // Initialize map and fetch weather data
       const map = L.map('map').setView([42.3601, -71.0589], 10);
-      // Simplified Boston Marathon route as GeoJSON (key points)
-      const marathonRoute = {
-        "type": "Feature",
-        "properties": {"name": "Boston Marathon Route"},
-        "geometry": {
-          "type": "LineString",
-          "coordinates": [
-            [-71.5182, 42.2298], // Hopkinton start (corrected)
-            [-71.6667, 42.3023], // Ashland
-            [-71.5989, 42.2598], // Natick
-            [-71.5119, 42.2250], // Wellesley
-            [-71.4262, 42.1868], // Newton
-            [-71.3795, 42.1580], // Waltham
-            [-71.3473, 42.1260], // Cambridge
-            [-71.0589, 42.3601]  // Boston finish (center for map)
-          ]
-        }
-      };
-      // Add route to map with styling
-      L.geoJSON(marathonRoute, {
-        style: function (feature) {
-          return {color: '#F2C12E', weight: 4, opacity: 0.8};
-        }
-      }).addTo(map);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
