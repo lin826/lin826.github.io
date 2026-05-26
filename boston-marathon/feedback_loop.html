@@ -121,12 +121,7 @@
                 class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-boston-gold placeholder-slate-600 focus:outline-none focus:border-boston-gold/60"
                 required>
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Actual Finish</label>
-              <input id="actualTime" type="text" placeholder="e.g. 3:18:45"
-                class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-400 placeholder-slate-600 focus:outline-none focus:border-boston-gold/60"
-                required>
-            </div>
+
           </div>
 
           <div>
@@ -322,7 +317,6 @@
             <tr class="border-b border-slate-800/80 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
               <th class="py-3 px-2">Date Logged</th>
               <th class="py-3 px-2 text-boston-gold">Target Time</th>
-              <th class="py-3 px-2 text-emerald-400">Actual Time</th>
               <th class="py-3 px-2">Strategy</th>
               <th class="py-3 px-2">Start Time</th>
               <th class="py-3 px-2">End Time</th>
@@ -360,7 +354,7 @@
       if (logs.length === 0) {
         tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="py-8 text-center text-slate-500 italic">No feedback entries recorded yet.</td>
+                        <td colspan="9" class="py-8 text-center text-slate-500 italic">No feedback entries recorded yet.</td>
                     </tr>
                 `;
         document.getElementById('insightPanel').classList.add('hidden');
@@ -374,42 +368,6 @@
       document.getElementById('insightPanel').classList.remove('hidden');
 
       const targetSec = parseTimeToSeconds(latest.targetTime);
-      const actualSec = parseTimeToSeconds(latest.actualTime);
-
-      if (targetSec > 0 && actualSec > 0) {
-        const deviation = ((actualSec - targetSec) / targetSec) * 100;
-        const devText = (deviation >= 0 ? '+' : '') + deviation.toFixed(1) + '%';
-
-        const devElem = document.getElementById('deviationVal');
-        devElem.innerText = devText;
-        if (deviation > 5) {
-          devElem.className = "text-red-400 font-bold";
-          document.getElementById('deviationBar').className = "bg-red-400 h-2 rounded-full";
-        } else if (deviation > 0) {
-          devElem.className = "text-orange-400 font-bold";
-          document.getElementById('deviationBar').className = "bg-orange-400 h-2 rounded-full";
-        } else {
-          devElem.className = "text-emerald-400 font-bold";
-          document.getElementById('deviationBar').className = "bg-emerald-400 h-2 rounded-full";
-        }
-
-        // Adjust bar width securely between 0% and 100%
-        const barWidth = Math.min(Math.max(Math.abs(deviation) * 5, 5), 100);
-        document.getElementById('deviationBar').style.width = `${barWidth}%`;
-
-        // Custom AI recommendations based on outcomes
-        let recommendation = "";
-        if (latest.fatigue > 6 && latest.strategy === 'aggressive') {
-          recommendation = "High quad fatigue combined with an aggressive front-half strategy on the early Hopkinton-to-Framingham drop caused significant slowdown in later miles. Recommend shifting target strategy to Conservative Start next race.";
-        } else if (latest.cramping > 6 && latest.hydration < 16) {
-          recommendation = "Severe muscle cramping reported along with low fluid intake rates. Increase fluid intake to at least 22 oz/hour under current simulated temperatures, and target 400+ mg sodium/hour.";
-        } else if (deviation > 3 && latest.temp > 70) {
-          recommendation = "Pace deviation was high due to heat stress in temperatures above 70°F. Suggest adding heat acclimation sessions to training profiles to reduce target time degradation next spring.";
-        } else {
-          recommendation = "Excellent execution. Pacing outcomes aligned within predictive model variance boundaries. Model calibration values are stable.";
-        }
-        document.getElementById('coachTip').innerText = recommendation;
-      }
 
       // Fill table
       logs.slice().reverse().forEach(log => {
@@ -418,7 +376,6 @@
         tr.innerHTML = `
                     <td class="py-3 px-2 font-semibold text-slate-400">${log.date}</td>
                     <td class="py-3 px-2 font-bold text-boston-gold">${log.targetTime}</td>
-                    <td class="py-3 px-2 font-bold text-emerald-400">${log.actualTime}</td>
                     <td class="py-3 px-2 text-slate-300 capitalize">${log.strategy}</td>
                     <td class="py-3 px-2 text-slate-400">${log.startTime}</td>
                     <td class="py-3 px-2 text-slate-400">${log.endTime}</td>
@@ -454,7 +411,6 @@
         startTime: document.getElementById('startTime').value,
         endTime: document.getElementById('endTime').value,
         targetTime: document.getElementById('targetTime').value,
-        actualTime: document.getElementById('actualTime').value,
         strategy: document.getElementById('strategy').value,
         temp: parseInt(document.getElementById('temp').value),
         humidity: parseInt(document.getElementById('humidity').value),
@@ -470,7 +426,7 @@
 
       // Clear inputs
       document.getElementById('targetTime').value = "";
-      document.getElementById('actualTime').value = "";
+
 
       updateLogsUI();
       alert("Outcome successfully logged. Model adjusted successfully.");
