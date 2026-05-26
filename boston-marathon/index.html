@@ -822,67 +822,154 @@
             return 'cross';
         }
 
+        // Estimate which hour of the day the runner is in each segment (0-23).
+        function computeSegmentHours(startTime) {
+            const h = parseInt(document.getElementById('targetHours').value) || 3;
+            const m = parseInt(document.getElementById('targetMinutes').value) || 0;
+            const s = parseInt(document.getElementById('targetSeconds').value) || 0;
+            const flatPacePerMile = ((h * 3600) + (m * 60) + s) / 26.2;
+            const [sh, sm] = startTime.split(':').map(Number);
+            const segMiles = [5, 10, 6, 5.2];
+            let elapsedSec = 0;
+            return segMiles.map(miles => {
+                const midSec = elapsedSec + (miles / 2) * flatPacePerMile;
+                elapsedSec += miles * flatPacePerMile;
+                const totalMin = sh * 60 + sm + Math.round(midSec / 60);
+                return Math.min(23, Math.max(0, Math.floor(totalMin / 60)));
+            });
+        }
+
+        async function fetchHourly(apiBase, date, wp) {
+            const url = `${apiBase}?latitude=${wp.lat}&longitude=${wp.lon}` +
+                `&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,winddirection_10m` +
+                `&temperature_unit=fahrenheit&windspeed_unit=mph` +
+                `&start_date=${date}&end_date=${date}&timezone=America%2FNew_York`;
+            const r = await fetch(url);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        }
+
+        // Forecast (≤16d) or archive (past): one fetch per waypoint, take the segment hour.
+        async function fetchSingleDay(date, segmentHours, apiBase) {
+            const results = await Promise.all(SEGMENT_WAYPOINTS.map(wp => fetchHourly(apiBase, date, wp)));
+            return results.map((data, idx) => {
+                const hr = segmentHours[idx];
+                const hourly = data.hourly || {};
+                return {
+                    temp: hourly.temperature_2m?.[hr] ?? 55,
+                    humidity: hourly.relativehumidity_2m?.[hr] ?? 50,
+                    windSpeed: hourly.windspeed_10m?.[hr] ?? 0,
+                    windDir: degToCompass(hourly.winddirection_10m?.[hr] ?? 0)
+                };
+            });
+        }
+
+        // For far-future dates: average the same calendar MM-DD across the last 5 years
+        // from the historical archive. Real data, per-hour resolution, no extrapolation.
+        async function fetchHistoricalAverage(date, segmentHours) {
+            const archive = 'https://archive-api.open-meteo.com/v1/archive';
+            const [, mm, dd] = date.split('-');
+            const currentYear = new Date().getFullYear();
+            const years = [1, 2, 3, 4, 5].map(n => currentYear - n);
+
+            const perWaypointAccum = SEGMENT_WAYPOINTS.map(() => ({ t: 0, h: 0, ws: 0, wdSin: 0, wdCos: 0, n: 0 }));
+
+            await Promise.all(SEGMENT_WAYPOINTS.flatMap((wp, wpIdx) =>
+                years.map(async yr => {
+                    const histDate = `${yr}-${mm}-${dd}`;
+                    try {
+                        const data = await fetchHourly(archive, histDate, wp);
+                        const hr = segmentHours[wpIdx];
+                        const hourly = data.hourly || {};
+                        const t = hourly.temperature_2m?.[hr];
+                        const h = hourly.relativehumidity_2m?.[hr];
+                        const ws = hourly.windspeed_10m?.[hr];
+                        const wd = hourly.winddirection_10m?.[hr];
+                        if (t != null && h != null && ws != null && wd != null) {
+                            const acc = perWaypointAccum[wpIdx];
+                            acc.t += t; acc.h += h; acc.ws += ws;
+                            // Average wind direction via unit-vector mean to avoid 359°/1° wraparound.
+                            const rad = wd * Math.PI / 180;
+                            acc.wdSin += Math.sin(rad); acc.wdCos += Math.cos(rad);
+                            acc.n += 1;
+                        }
+                    } catch (_) { /* skip a missing year and keep averaging the rest */ }
+                })
+            ));
+
+            return perWaypointAccum.map(acc => {
+                if (acc.n === 0) throw new Error('no historical data');
+                const wdDeg = (Math.atan2(acc.wdSin / acc.n, acc.wdCos / acc.n) * 180 / Math.PI + 360) % 360;
+                return {
+                    temp: acc.t / acc.n,
+                    humidity: acc.h / acc.n,
+                    windSpeed: acc.ws / acc.n,
+                    windDir: degToCompass(wdDeg)
+                };
+            });
+        }
+
+        // For dates more than ~5 years out: CMIP6 downscaled climate projections.
+        // Daily-resolution only, so we apply the same daily mean to every segment.
+        async function fetchClimateProjection(date) {
+            const climate = 'https://climate-api.open-meteo.com/v1/climate';
+            const results = await Promise.all(SEGMENT_WAYPOINTS.map(async wp => {
+                const url = `${climate}?latitude=${wp.lat}&longitude=${wp.lon}` +
+                    `&start_date=${date}&end_date=${date}` +
+                    `&models=EC_Earth3P_HR&daily=temperature_2m_mean,relative_humidity_2m_mean,wind_speed_10m_mean,wind_direction_10m_dominant` +
+                    `&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+                const r = await fetch(url);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            }));
+            return results.map(data => {
+                const d = data.daily || {};
+                return {
+                    temp: d.temperature_2m_mean?.[0] ?? 55,
+                    humidity: d.relative_humidity_2m_mean?.[0] ?? 50,
+                    windSpeed: d.wind_speed_10m_mean?.[0] ?? 0,
+                    windDir: degToCompass(d.wind_direction_10m_dominant?.[0] ?? 0)
+                };
+            });
+        }
+
         async function fetchRaceForecast() {
             const status = document.getElementById('forecastStatus');
             const date = document.getElementById('raceDate').value;
             const startTime = document.getElementById('raceStart').value || '10:00';
             if (!date) { status.innerText = 'Pick a race date first.'; return; }
 
-            status.innerText = 'Fetching Open-Meteo forecast for 4 waypoints…';
-            const today = new Date().toISOString().slice(0, 10);
-            const isHistorical = date < today;
-            const apiBase = isHistorical
-                ? 'https://archive-api.open-meteo.com/v1/archive'
-                : 'https://api.open-meteo.com/v1/forecast';
+            // Decide which Open-Meteo endpoint can answer for this date.
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const target = new Date(date + 'T00:00:00');
+            const daysOut = Math.round((target - today) / 86400000);
+
+            let mode, modeLabel;
+            if (daysOut >= -5 && daysOut <= 16) { mode = 'forecast'; modeLabel = 'live forecast'; }
+            else if (daysOut < -5) { mode = 'archive'; modeLabel = 'historical archive'; }
+            else if (daysOut <= 365 * 5) { mode = 'historicalAverage'; modeLabel = '5-year historical average'; }
+            else { mode = 'climate'; modeLabel = 'CMIP6 climate projection'; }
+
+            status.innerText = `Fetching ${modeLabel}…`;
+            const segmentHours = computeSegmentHours(startTime);
 
             try {
-                const requests = SEGMENT_WAYPOINTS.map(wp => {
-                    const url = `${apiBase}?latitude=${wp.lat}&longitude=${wp.lon}` +
-                        `&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,winddirection_10m` +
-                        `&temperature_unit=fahrenheit&windspeed_unit=mph` +
-                        `&start_date=${date}&end_date=${date}&timezone=America%2FNew_York`;
-                    return fetch(url).then(r => {
-                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                        return r.json();
-                    });
-                });
-                const results = await Promise.all(requests);
-
-                // Estimate the hour each segment is run, based on target finish & segment miles
-                const h = parseInt(document.getElementById('targetHours').value) || 3;
-                const m = parseInt(document.getElementById('targetMinutes').value) || 0;
-                const s = parseInt(document.getElementById('targetSeconds').value) || 0;
-                const flatPacePerMile = ((h * 3600) + (m * 60) + s) / 26.2;
-                const [sh, sm] = startTime.split(':').map(Number);
-                const segMiles = [5, 10, 6, 5.2];
-                let elapsedSec = 0;
-                const segmentHours = segMiles.map(miles => {
-                    const midSec = elapsedSec + (miles / 2) * flatPacePerMile;
-                    elapsedSec += miles * flatPacePerMile;
-                    const totalMin = sh * 60 + sm + Math.round(midSec / 60);
-                    return Math.min(23, Math.max(0, Math.floor(totalMin / 60)));
-                });
-
-                perSegmentForecast = results.map((data, idx) => {
-                    const hr = segmentHours[idx];
-                    const hourly = data.hourly || {};
-                    return {
-                        temp: hourly.temperature_2m?.[hr] ?? 55,
-                        humidity: hourly.relativehumidity_2m?.[hr] ?? 50,
-                        windSpeed: hourly.windspeed_10m?.[hr] ?? 0,
-                        windDir: degToCompass(hourly.winddirection_10m?.[hr] ?? 0)
-                    };
-                });
-
-                status.innerText = `Forecast loaded · ${perSegmentForecast.map((f, i) => `${segmentHours[i]}:00 ${Math.round(f.temp)}°F`).join(' · ')}`;
+                if (mode === 'forecast') {
+                    perSegmentForecast = await fetchSingleDay(date, segmentHours, 'https://api.open-meteo.com/v1/forecast');
+                } else if (mode === 'archive') {
+                    perSegmentForecast = await fetchSingleDay(date, segmentHours, 'https://archive-api.open-meteo.com/v1/archive');
+                } else if (mode === 'historicalAverage') {
+                    perSegmentForecast = await fetchHistoricalAverage(date, segmentHours);
+                } else {
+                    perSegmentForecast = await fetchClimateProjection(date);
+                }
+                status.innerText = `Loaded · ${modeLabel} · ` +
+                    perSegmentForecast.map((f, i) => `${Math.round(f.temp)}°F ${f.windDir}`).join(' · ');
                 document.getElementById('clearForecastBtn').classList.remove('hidden');
                 calculateAdjustments();
             } catch (err) {
-                // Open-Meteo forecast only covers ~16 days ahead, and the archive
-                // is delayed by a few days. Fall back to a realistic mock so the
-                // demo flow keeps working for far-future or just-yesterday dates.
                 perSegmentForecast = mockForecastForDate(date);
-                status.innerText = `Live API unavailable (${err.message}). Using mock race-morning forecast: ` +
+                status.innerText = `${modeLabel} unavailable (${err.message}). Using mock: ` +
                     perSegmentForecast.map(f => `${Math.round(f.temp)}°F ${f.windDir}`).join(' · ');
                 document.getElementById('clearForecastBtn').classList.remove('hidden');
                 calculateAdjustments();
