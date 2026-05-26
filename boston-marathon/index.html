@@ -294,6 +294,22 @@
 
             </div>
 
+            <!-- Gear Recommendations -->
+            <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shirt" class="text-boston-lightBlue w-5 h-5"></i>
+                        <h2 class="font-bold text-lg text-slate-100">Gear Recommendations</h2>
+                    </div>
+                    <span class="text-xs text-slate-400 bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800 font-bold" id="gearBasis">
+                        Based on start-line conditions
+                    </span>
+                </div>
+                <div id="gearGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
             <!-- Charts: Elevation & Pacing Profile -->
             <div class="glass-panel rounded-3xl p-6 shadow-xl">
                 <div class="flex items-center justify-between mb-4">
@@ -570,6 +586,14 @@
             // Confidence band (Monte Carlo over weather uncertainty)
             document.getElementById('finishBand').innerText =
                 `P10–P90: ${formatSecondsToTime(band.p10)} – ${formatSecondsToTime(band.p90)}`;
+
+            // Gear recommendations — use the start-line segment (Hopkinton) if a
+            // forecast is loaded so layering advice matches the actual start temp.
+            const startEnv = perSegmentForecast ? perSegmentForecast[0] : { temp, humidity, windSpeed, windDir };
+            const peakEnv = perSegmentForecast
+                ? perSegmentForecast.reduce((a, b) => b.temp > a.temp ? b : a)
+                : startEnv;
+            renderGear(startEnv, peakEnv, !!perSegmentForecast);
 
             document.getElementById('hydrationRate').innerText = `${fluidOzPerHour} oz/hr`;
             document.getElementById('electrolyteRate').innerText = `${sodiumMgPerHour} mg Sodium/hr`;
@@ -999,6 +1023,62 @@
                 windSpeed: Math.round(baseWind + i * 0.8),
                 windDir: dir
             }));
+        }
+
+        // Rule-based gear picker. Uses start-line temp for layering decisions and
+        // the warmest forecast segment to flag throwaways and heat-management gear.
+        function renderGear(start, peak, hasForecast) {
+            const t = start.temp, h = start.humidity, w = start.windSpeed, dir = start.windDir;
+            const peakT = peak.temp;
+            const items = [];
+
+            // Top
+            if (t < 40) items.push(['shirt', 'Top', 'Long-sleeve thermal + light wind vest. Throwaway sweatshirt through Mile 3.']);
+            else if (t < 50) items.push(['shirt', 'Top', 'Long-sleeve technical tee + removable arm warmers.']);
+            else if (t < 60) items.push(['shirt', 'Top', 'Short-sleeve tee + arm warmers you can shed at Mile 5.']);
+            else if (t < 70) items.push(['shirt', 'Top', 'Light-colored singlet or short-sleeve tee.']);
+            else items.push(['shirt', 'Top', 'White mesh singlet — maximize convective cooling.']);
+
+            // Bottom
+            if (t < 40) items.push(['move', 'Bottom', 'Half tights or thermal three-quarter tights.']);
+            else if (t < 55) items.push(['move', 'Bottom', 'Half tights or compression shorts.']);
+            else items.push(['move', 'Bottom', 'Split shorts for max airflow.']);
+
+            // Headwear / hands
+            if (t < 40) items.push(['hand-metal', 'Hands & Head', 'Beanie + light running gloves; wind-blocking pair if available.']);
+            else if (t < 50) items.push(['hand-metal', 'Hands & Head', 'Throwaway gloves through Mile 5; ear warmer optional.']);
+            else if (peakT >= 65) items.push(['glasses', 'Headwear', 'White visor or cap + sunglasses for sun glare past Wellesley.']);
+            else items.push(['glasses', 'Headwear', 'Visor optional; cap if precipitation expected.']);
+
+            // Footwear / socks
+            if (h >= 90 || t < 40) items.push(['footprints', 'Footwear', 'Drainage-style race shoe + Injinji toe socks to prevent blistering.']);
+            else items.push(['footprints', 'Footwear', 'Carbon-plate race shoe (Alphafly 3 / Vaporfly class).']);
+
+            // Fuel & hydration
+            if (peakT >= 65) items.push(['droplets', 'Fuel', 'High-carb gels + 2–3 salt caps. Pre-cool with ice slurry 30 min before start.']);
+            else if (peakT < 45) items.push(['droplets', 'Fuel', 'Standard gels every 5 mi; warm fluids at aid stations.']);
+            else items.push(['droplets', 'Fuel', 'Standard gel cadence (every 30–35 min) + electrolyte mix.']);
+
+            // Wind / weather extras
+            if (w >= 15 && dir === 'head') items.push(['wind', 'Wind Defense', `${Math.round(w)} mph headwind — wear a light wind shell, plan to draft.`]);
+            else if (w >= 18) items.push(['wind', 'Wind Defense', `${Math.round(w)} mph wind — closer-fitting layers to reduce drag.`]);
+
+            // Throwaways for cold or wet starts
+            if (t < 50 || h >= 90) items.push(['shopping-bag', 'Throwaways', 'Trash-bag poncho + old sweatshirt for Athletes\' Village; drop before corral.']);
+
+            document.getElementById('gearBasis').innerText = hasForecast
+                ? `Based on Hopkinton forecast · peak ${Math.round(peakT)}°F`
+                : `Based on start-line conditions`;
+            document.getElementById('gearGrid').innerHTML = items.map(([icon, label, text]) => `
+                <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3">
+                    <div class="flex items-center gap-1.5 text-boston-gold text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                        <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>
+                        ${label}
+                    </div>
+                    <p class="text-slate-300 leading-snug text-[11px]">${text}</p>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
         }
 
         function clearForecast() {
