@@ -346,6 +346,34 @@
     // Load existing logs from localStorage
     let logs = JSON.parse(localStorage.getItem('marathon_outcomes') || '[]');
 
+    // Seed example outcomes on first visit so the table isn't empty.
+    if (logs.length === 0) {
+      logs = [
+        {
+          date: 'Apr 21, 10:42',
+          raceDate: '2025-04-21', startTime: '10:00', endTime: '13:12',
+          targetTime: '3:15:00', strategy: 'conservative',
+          temp: 54, humidity: 55, wind: 7,
+          hydration: 18, sodium: 350, cramping: 2, fatigue: 4
+        },
+        {
+          date: 'Apr 15, 14:08',
+          raceDate: '2024-04-15', startTime: '10:00', endTime: '13:38',
+          targetTime: '3:20:00', strategy: 'aggressive',
+          temp: 64, humidity: 45, wind: 10,
+          hydration: 14, sodium: 280, cramping: 7, fatigue: 8
+        },
+        {
+          date: 'Apr 16, 13:55',
+          raceDate: '2018-04-16', startTime: '10:00', endTime: '13:31',
+          targetTime: '3:25:00', strategy: 'even',
+          temp: 38, humidity: 95, wind: 22,
+          hydration: 12, sodium: 240, cramping: 4, fatigue: 9
+        }
+      ];
+      localStorage.setItem('marathon_outcomes', JSON.stringify(logs));
+    }
+
     function updateLogsUI() {
       document.getElementById('recordCount').innerText = `${logs.length} logs`;
       const tbody = document.getElementById('logsTableBody');
