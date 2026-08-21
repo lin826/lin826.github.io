@@ -1,5 +1,183 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
-<title>Redirecting to Google Site</title>
-<meta http-equiv="refresh" content="0; URL=https://sites.google.com/gapp.nthu.edu.tw/ijulin">
-<link rel="canonical" href="https://sites.google.com/gapp.nthu.edu.tw/ijulin">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-Ju Lin — Software Engineer</title>
+<meta name="description" content="I-Ju Lin — software engineer building scalable backend services, distributed systems, and embedded platforms.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1f2430;
+    --muted: #5c6470;
+    --accent: #2456a6;
+    --line: #e4e7ec;
+    --chip: #f2f5f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171d;
+      --text: #e8eaf0;
+      --muted: #9aa3b0;
+      --accent: #7aa7e8;
+      --line: #2a2f3a;
+      --chip: #1e232d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; margin: 0 0 .25rem; }
+  .tagline { color: var(--muted); margin: 0 0 1rem; }
+  .contact { margin: 0 0 2rem; color: var(--muted); }
+  .contact a { margin-right: 1rem; }
+  h2 {
+    font-size: 1.15rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: .35rem;
+    margin: 2.25rem 0 1rem;
+  }
+  .job { margin-bottom: 1.25rem; }
+  .job-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .25rem; }
+  .job-head strong { font-size: 1rem; }
+  .job-head .dates { color: var(--muted); font-size: .9rem; white-space: nowrap; }
+  .role { color: var(--muted); font-style: italic; }
+  ul { margin: .35rem 0 0; padding-left: 1.25rem; }
+  li { margin-bottom: .2rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .25rem; }
+  .chip {
+    background: var(--chip);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .15rem .65rem;
+    font-size: .85rem;
+  }
+  .skill-row { margin-bottom: .75rem; }
+  .skill-row .label { font-weight: 600; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>I-Ju Lin</h1>
+  <p class="tagline">Software engineer with 5 years building scalable backend services and distributed
+    systems in Python, TypeScript, and AWS — with production experience shipping embedded systems,
+    cloud-native microservices, CI/CD pipelines, and operational monitoring at Klaviyo, Cognex, and Dell.</p>
+  <p class="contact">
+    <a href="mailto:liniju826@gmail.com">liniju826@gmail.com</a>
+    <a href="https://www.linkedin.com/in/i-ju-lin" rel="me">LinkedIn</a>
+    <a href="https://github.com/lin826">GitHub</a>
+  </p>
+
+  <h2>Skills</h2>
+  <div class="skill-row"><span class="label">Programming Languages:</span> JavaScript/TypeScript, Python, Golang, PHP, C, C++, Java</div>
+  <div class="skill-row"><span class="label">Data Processing:</span> Redis, MySQL, PostgreSQL, ClickHouse, dbt Labs, Snowflake, PySpark, Airflow, Kafka</div>
+  <div class="skill-row"><span class="label">Cloud Infra &amp; Observability:</span> AWS CloudWatch/X-Ray, Grafana, Sentry, PagerDuty, Slackbot, Statsig</div>
+  <div class="skill-row"><span class="label">Languages:</span> Mandarin Chinese (Native), English (Proficient), German (Basic), Japanese (Basic)</div>
+
+  <h2>Work Experience</h2>
+
+  <div class="job">
+    <div class="job-head"><strong>Klaviyo</strong><span class="dates">Mar. 2026 – May 2026</span></div>
+    <div class="role">Software Engineer</div>
+    <ul>
+      <li>Owned Snowflake business intelligence analytics pipelines and Grafana observability to monitor metrics.</li>
+      <li>Orchestrated Kubernetes-containerized Apache Spark jobs through Airflow on AWS to scale data retrieval.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong>Cognex Corporation</strong><span class="dates">Jun. 2024 – Mar. 2026</span></div>
+    <div class="role">Software Engineer</div>
+    <ul>
+      <li>Shipped machine vision products from zero to one, baking Bitbake recipes with gRPC microservices.</li>
+      <li>Established the infrastructure service on an in-house Yocto embedded OS for IEC security compliance.</li>
+      <li>Delivered high-performance C++ multithreaded inter-process communication using POSIX shmem.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong>KardoAI</strong><span class="dates">Nov. 2023 – May 2024</span></div>
+    <div class="role">Founding AI Engineer — NVIDIA Inception Program</div>
+    <ul>
+      <li>Owned a FinTech LLM agent with tool-calling, reasoning, and integrations with Mastercard APIs.</li>
+      <li>Collaborated with the non-technical founding team to define product architecture, translate business requirements into AI features, and rapidly prototype capabilities for the Japan and Dubai markets.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong>Dell</strong><span class="dates">May 2023 – Aug. 2023</span></div>
+    <div class="role">Graduate Software Engineer Intern — Telecommunications</div>
+    <ul>
+      <li>Built bare-metal telemetry features with test coverage +8.6% and Docker image size optimized by 36%.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong>104 Corporation</strong><span class="dates">Mar. 2019 – Aug. 2020</span></div>
+    <div class="role">Software Engineer</div>
+    <ul>
+      <li>Developed TypeScript SDK supporting OAuth, OpenID Connect, and CORS for Vue.js app on AWS.</li>
+    </ul>
+  </div>
+
+  <h2>Education</h2>
+  <div class="job">
+    <div class="job-head"><strong>Boston University</strong><span class="dates">Aug 2022 – Jan 2024</span></div>
+    <div class="role">M.Sc. in Computer Science — Boston, MA</div>
+  </div>
+  <div class="job">
+    <div class="job-head"><strong>National Tsing Hua University</strong><span class="dates">Sep 2014 – Jul 2018</span></div>
+    <div class="role">M.Sc. &amp; B.S. in Computer Science — Hsinchu City, Taiwan</div>
+    <ul>
+      <li>Master thesis: Self-supervised Robotic Control using Reinforcement Learning.</li>
+    </ul>
+  </div>
+
+  <h2>Projects</h2>
+
+  <div class="job">
+    <div class="job-head"><strong>AI-based Prompt Optimizer</strong></div>
+    <div class="role">vLLM, VeRL, Ray, Slurm, Distributed Cluster Architecture</div>
+    <ul>
+      <li>Integrated Group Relative Policy Optimization (GRPO) and GEPA (Genetic-Pareto) into a ReAct agent framework using KL coefficients and PPO clipping for reward modeling.</li>
+      <li>Trained Qwen3-8B inference server with a retrieval node using Fully Sharded Data Parallel (FSDP).</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong>On-Device Model Alignment</strong></div>
+    <div class="role">Self-Distillation Fine Tuning (SDFT), Kotlin, LoRA</div>
+    <ul>
+      <li>Learning human preference by LiquidAI LFM2.5-230M model using online SDFT with a lightweight LoRA.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong>Extension for Web Development</strong></div>
+    <div class="role">JavaScript, TypeScript, Redis, DynamoDB</div>
+    <ul>
+      <li>Published npm package to configure BrowserStack version compatibility; extended TypeScript support in JavaScript libraries: CORS, Cookies stored by Redis, and web sessions.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head"><strong><a href="./boston-marathon/">Boston Marathon Race Simulator</a></strong></div>
+    <div class="role">Interactive race simulation with weather-driven pacing, gear recommendations, and a virtual coach</div>
+  </div>
+
+  <footer>
+    © 2026 I-Ju Lin · Hosted on <a href="https://pages.github.com/">GitHub Pages</a>
+  </footer>
+</main>
+</body>
+</html>
